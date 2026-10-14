@@ -406,6 +406,11 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
           <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 1.5v8.25M8 9.75 5 6.75M8 9.75l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 11v1.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           현재 목록 다운로드
         </button>
+        <button type="button" class="btn-export btn-export-sm" id="btnImport" title="엑셀 다운로드로 받은 파일을 올리면, 구글 시트에 없는 기록만 골라 추가합니다">
+          <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 10.5V2.25M8 2.25 5 5.25M8 2.25l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 11v1.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          엑셀 가져오기
+        </button>
+        <input type="file" id="importFile" accept=".xlsx,.xls" hidden>
       </div>
       <div id="detailPanels">
         <div class="detail-panel active" data-panel="records">
@@ -1590,6 +1595,100 @@ async function downloadExcel(){
 document.getElementById('btnExportExcel').addEventListener('click', downloadExcel);
 document.getElementById('btnExportView').addEventListener('click', downloadCurrentView);
 
+
+/* ---------------- EXCEL IMPORT (엑셀 → 구글 시트) ---------------- */
+/* 「엑셀 다운로드」로 받은 파일의 입출고기록 시트를 읽어, 구글 시트에 아직 없는
+   기록만 골라 하나씩 추가합니다. 같은 기록(날짜·구분·품목·제조일자·사용처·수량이
+   모두 같은 것)은 이미 있는 개수만큼 건너뛰므로 여러 번 올려도 중복되지 않습니다. */
+function cellToYMD(v){
+  if (v instanceof Date) return localYMD(v);
+  if (typeof v === 'number' && v > 20000 && v < 80000){
+    const d = new Date(Math.round((v - 25569) * 86400000));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  }
+  return normDate(v);
+}
+function recKey(r){
+  return [r.material, r.date, r.type, String(r.item||'').trim(), String(r.batch||'').trim(),
+          (r.loc && r.loc !== '-') ? String(r.loc).trim() : '-', Number(r.qty)||0].join('|');
+}
+function parseImportWorkbook(wb){
+  const out = [];
+  const plan = [['bean','원두_입출고기록'], ['capsule','2차가공품_입출고기록']];
+  plan.forEach(([material, name]) => {
+    const ws = wb.Sheets[name];
+    if (!ws) return;
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:''});
+    rows.slice(1).forEach(row => {
+      const [date, type, item, code, batch, loc, qty] = row;
+      if (!item || (type !== '입고' && type !== '사용')) return;
+      out.push({
+        material, date: cellToYMD(date), type, item: String(item).trim(),
+        code: String(code||'').trim(), batch: String(batch||'').trim(),
+        loc: type === '사용' ? (String(loc||'').trim() || '-') : '-',
+        qty: Number(qty)||0,
+      });
+    });
+  });
+  return out;
+}
+const btnImport = document.getElementById('btnImport');
+const importFile = document.getElementById('importFile');
+btnImport.addEventListener('click', () => {
+  if (!usingSheetSync){
+    window.alert('구글 시트에 연결된 상태에서만 가져올 수 있습니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  importFile.value = '';
+  importFile.click();
+});
+importFile.addEventListener('change', async () => {
+  const file = importFile.files && importFile.files[0];
+  if (!file) return;
+  const label = btnImport.innerHTML;
+  try{
+    if (typeof XLSX === 'undefined'){ window.alert('엑셀 라이브러리를 불러오지 못했습니다.'); return; }
+    const wb = XLSX.read(await file.arrayBuffer(), {type:'array', cellDates:true});
+    const incoming = parseImportWorkbook(wb);
+    if (!incoming.length){
+      window.alert('파일에서 입출고 기록을 찾지 못했습니다.\n이 페이지의 「엑셀 다운로드」로 받은 파일인지 확인해주세요.');
+      return;
+    }
+    await fetchRecordsFromSheet(false);
+    const have = new Map();
+    records.forEach(r => { const k = recKey(r); have.set(k, (have.get(k)||0) + 1); });
+    const toAdd = [];
+    incoming.forEach(r => {
+      const k = recKey(r);
+      const n = have.get(k) || 0;
+      if (n > 0) have.set(k, n - 1); else toAdd.push(r);
+    });
+    if (!toAdd.length){
+      window.alert(`파일의 기록 ${incoming.length}건이 모두 이미 구글 시트에 있습니다. 추가할 내용이 없어요.`);
+      return;
+    }
+    const nb = toAdd.filter(r=>r.material==='bean').length, nc = toAdd.length - nb;
+    if (!window.confirm(`파일 기록 ${incoming.length}건 중 구글 시트에 없는 ${toAdd.length}건을 추가할까요?\n(원두 ${nb}건 · 2차가공품 ${nc}건)\n\n추가 중에는 창을 닫지 마세요.`)) return;
+    if (!ensurePin(false)) return;
+    btnImport.disabled = true;
+    let done = 0;
+    for (const r of toAdd){
+      btnImport.textContent = `가져오는 중… ${done}/${toAdd.length}`;
+      await postToSheet({action:'add', record: r});
+      done++;
+    }
+    await fetchRecordsFromSheet(false);
+    window.alert(`${done}건을 추가했습니다.`);
+  } catch(e){
+    console.error(e);
+    window.alert('가져오기 중 오류가 발생했습니다: ' + ((e && e.message) || '알 수 없는 오류') + '\n\n다시 올리면 이미 들어간 기록은 건너뛰고 나머지만 추가합니다.');
+    fetchRecordsFromSheet(false);
+  } finally {
+    btnImport.disabled = false;
+    btnImport.innerHTML = label;
+  }
+});
+
 /* ---------------- WIRING ---------------- */
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1610,6 +1709,7 @@ document.querySelectorAll('.subtab-btn').forEach(btn => {
     const searchBox = document.getElementById('searchBox');
     searchBox.style.display = activeSubtab === 'summary' ? 'none' : '';
     document.getElementById('btnExportView').style.display = activeSubtab === 'summary' ? 'none' : '';
+    document.getElementById('btnImport').style.display = activeSubtab === 'summary' ? 'none' : '';
     fitTableWraps();
   });
 });

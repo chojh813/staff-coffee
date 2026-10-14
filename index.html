@@ -613,6 +613,20 @@ function deriveMaterialData(material){
   };
 }
 
+/* 구글 시트가 날짜를 자동 변환해 "2026-10-12T15:00:00.000Z" 같은 값이 와도
+   한국 시간 기준 "2026-10-13" 형태로 바꿔서 보여줌 */
+function localYMD(d){
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function normDate(v){
+  if (v == null || v === '') return '';
+  const s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return localYMD(d);
+  return s;
+}
 const tooltip = document.getElementById('tooltip');
 function showTooltip(evt, html){
   tooltip.innerHTML = html;
@@ -1040,7 +1054,7 @@ function resetFormToAdd(){
   formTitle.textContent = '새 기록 추가 — ' + (detailMaterial==='bean' ? '원두' : '2차가공품');
   fSubmit.textContent = '저장';
   setFormType('입고');
-  fDate.value = new Date().toISOString().slice(0,10);
+  fDate.value = localYMD(new Date());
   fItem.value = ''; fCode.value=''; fBatch.value=''; fQty.value=''; fLoc.value='';
   codeAutoFilled = true;
   fBatchHint.textContent = ''; fBatchHint.className = 'hint';
@@ -1101,7 +1115,7 @@ document.getElementById('tblRecords').addEventListener('click', (evt) => {
 
 fCancelEdit.addEventListener('click', () => { resetFormToAdd(); });
 
-fDate.value = new Date().toISOString().slice(0,10);
+fDate.value = localYMD(new Date());
 
 document.querySelectorAll('.type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1234,7 +1248,7 @@ async function fetchRecordsFromSheet(isFirstLoad){
     if (!data || data.ok !== true) throw new Error('bad response');
     usingSheetSync = true;
     setSyncBadge('live');
-    records = (data.records || []).map(r => ({...r, qty: Number(r.qty)||0}));
+    records = (data.records || []).map(r => ({...r, date: normDate(r.date), batch: (r.batch==null?'':String(r.batch)), qty: Number(r.qty)||0}));
     renderDashboard();
     renderDetail();
   } catch(e){
@@ -1292,7 +1306,7 @@ document.getElementById('recordForm').addEventListener('submit', async (evt) => 
 
   const rec = {
     material: detailMaterial,
-    date: fDate.value || new Date().toISOString().slice(0,10),
+    date: fDate.value || localYMD(new Date()),
     type: formType,
     item,
     code: fCode.value.trim(),
@@ -1454,7 +1468,7 @@ async function downloadCurrentView(){
     const sheet = XLSX.utils.aoa_to_sheet(aoa);
     sheet['!cols'] = autoFitCols(aoa);
     XLSX.utils.book_append_sheet(wb, sheet, `${matLabel}_${sheetLabel}`.slice(0,31));
-    const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const today = localYMD(new Date()).replace(/-/g,'');
     const searchSuffix = searchTerm ? `_검색(${searchTerm})` : '';
     const filename = `${matLabel}_${sheetLabel}${searchSuffix}_${today}.xlsx`;
     const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
@@ -1541,7 +1555,7 @@ async function downloadExcel(){
       locSheet['!cols'] = autoFitCols(locAoa);
       XLSX.utils.book_append_sheet(wb, locSheet, `${label}_사용처별사용량`);
     });
-    const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const today = localYMD(new Date()).replace(/-/g,'');
     const filename = `원두_2차가공품_재고관리_${today}.xlsx`;
     const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
     const blob = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});

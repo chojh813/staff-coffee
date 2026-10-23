@@ -278,7 +278,16 @@ tbody tr.new-row td{animation:flashNew 1.6s ease-out;}
 }
 .type-btn.active[data-type="입고"]{background:color-mix(in srgb, var(--good) 18%, var(--surface)); color:var(--good);}
 .type-btn.active[data-type="사용"]{background:var(--accent-soft); color:var(--accent);}
-.form-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px 12px; margin-top:12px;}
+.form-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px 16px; margin-top:12px;}
+.form-grid .field.span-2{grid-column:span 2;}
+@media (max-width: 880px){
+  .form-grid{grid-template-columns:repeat(2, 1fr);}
+  .form-grid .field.span-2{grid-column:span 2;}
+}
+@media (max-width: 480px){
+  .form-grid{grid-template-columns:1fr;}
+  .form-grid .field.span-2{grid-column:span 1;}
+}
 .field{display:flex; flex-direction:column; gap:5px; min-width:0;}
 .field label{font-size:11.5px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.03em;}
 .field input, .field select{
@@ -460,7 +469,7 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
                     <option value="">선택</option>
                   </select>
                 </div>
-                <div class="field">
+                <div class="field span-2">
                   <label for="fQty">수량 (<span id="fQtyUnit">g</span>)</label>
                   <input type="number" id="fQty" min="0" step="1" placeholder="0" required>
                 </div>

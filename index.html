@@ -438,6 +438,16 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
                   <label for="fCode">품목코드</label>
                   <input type="text" id="fCode" placeholder="선택 입력">
                 </div>
+                <div class="field" id="fSizeField">
+                  <label for="fSize">규격</label>
+                  <select id="fSize">
+                    <option value="">선택</option>
+                    <option value="100g">100g</option>
+                    <option value="200g">200g</option>
+                    <option value="500g">500g</option>
+                    <option value="1kg">1kg</option>
+                  </select>
+                </div>
                 <div class="field">
                   <label for="fBatch" id="fBatchLabel">제조일자</label>
                   <input type="text" id="fBatch" list="batchList" placeholder="예: 26.09.16" required>
@@ -487,6 +497,7 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
 const SEED_RECORDS = [{"id": "seed-b-0", "material": "bean", "date": "2026-07-20", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "-", "qty": 32000}, {"id": "seed-b-1", "material": "bean", "date": "2026-08-07", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 3000}, {"id": "seed-b-2", "material": "bean", "date": "2026-08-07", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 2000}, {"id": "seed-b-3", "material": "bean", "date": "2026-08-14", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.29", "loc": "-", "qty": 2000}, {"id": "seed-b-4", "material": "bean", "date": "2026-08-14", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.30", "loc": "-", "qty": 500}, {"id": "seed-b-5", "material": "bean", "date": "2026-08-19", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.05", "loc": "-", "qty": 500}, {"id": "seed-b-6", "material": "bean", "date": "2026-08-19", "type": "입고", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.07.30", "loc": "-", "qty": 500}, {"id": "seed-b-7", "material": "bean", "date": "2026-08-19", "type": "입고", "item": "므쵸베리", "code": "CFE0016", "batch": "26.08.02", "loc": "-", "qty": 500}, {"id": "seed-b-8", "material": "bean", "date": "2026-08-19", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-9", "material": "bean", "date": "2026-08-19", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-10", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.28", "loc": "-", "qty": 500}, {"id": "seed-b-11", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "부산", "code": "CFE0012", "batch": "26.08.12", "loc": "-", "qty": 1000}, {"id": "seed-b-12", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.08.13", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-13", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "에티오피아 시코 디카페인", "code": "CFE1269", "batch": "26.07.30", "loc": "-", "qty": 500}, {"id": "seed-b-14", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "에콰 루그마파타 lot2", "code": "CFE1369", "batch": "26.08.14", "loc": "-", "qty": 500}, {"id": "seed-b-15", "material": "bean", "date": "2026-08-25", "type": "사용", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.08.13", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-16", "material": "bean", "date": "2026-08-25", "type": "사용", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.07.30", "loc": "직원식당", "qty": 500}, {"id": "seed-b-17", "material": "bean", "date": "2026-08-26", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 3100}, {"id": "seed-b-18", "material": "bean", "date": "2026-08-27", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.14", "loc": "-", "qty": 2000}, {"id": "seed-b-19", "material": "bean", "date": "2026-08-27", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 900}, {"id": "seed-b-20", "material": "bean", "date": "2026-08-27", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "본점", "qty": 2000}, {"id": "seed-b-21", "material": "bean", "date": "2026-08-28", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-22", "material": "bean", "date": "2026-08-28", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-23", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.12", "loc": "-", "qty": 4000}, {"id": "seed-b-24", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.19", "loc": "-", "qty": 1000}, {"id": "seed-b-25", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.11", "loc": "-", "qty": 500}, {"id": "seed-b-26", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.18", "loc": "-", "qty": 200}, {"id": "seed-b-27", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에티오피아 단체 워시드", "code": "CFE1273", "batch": "26.08.13", "loc": "-", "qty": 500}, {"id": "seed-b-28", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.11", "loc": "-", "qty": 500}, {"id": "seed-b-29", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.08.10", "loc": "-", "qty": 200}, {"id": "seed-b-30", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "므쵸베리", "code": "CFE0016", "batch": "26.08.11", "loc": "-", "qty": 1000}, {"id": "seed-b-31", "material": "bean", "date": "2026-08-28", "type": "사용", "item": "에티오피아 단체 워시드", "code": "CFE1273", "batch": "26.08.13", "loc": "직원식당", "qty": 500}, {"id": "seed-b-32", "material": "bean", "date": "2026-08-29", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-33", "material": "bean", "date": "2026-09-01", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 2000}, {"id": "seed-b-34", "material": "bean", "date": "2026-09-02", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-35", "material": "bean", "date": "2026-09-04", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-36", "material": "bean", "date": "2026-09-04", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.27", "loc": "-", "qty": 500}, {"id": "seed-b-37", "material": "bean", "date": "2026-09-07", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-38", "material": "bean", "date": "2026-09-07", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-39", "material": "bean", "date": "2026-09-07", "type": "입고", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.08.19", "loc": "-", "qty": 1000}, {"id": "seed-b-40", "material": "bean", "date": "2026-09-08", "type": "사용", "item": "므쵸베리", "code": "CFE0016", "batch": "26.08.02", "loc": "직원식당", "qty": 500}, {"id": "seed-b-41", "material": "bean", "date": "2026-09-08", "type": "사용", "item": "므쵸베리", "code": "CFE0016", "batch": "26.08.11", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-42", "material": "bean", "date": "2026-09-08", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-43", "material": "bean", "date": "2026-09-09", "type": "입고", "item": "에티오피아 사포 모스토 무산소 내추럴", "code": "CFE1377", "batch": "26.09.03", "loc": "-", "qty": 500}, {"id": "seed-b-44", "material": "bean", "date": "2026-09-10", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.24", "loc": "-", "qty": 2000}, {"id": "seed-b-45", "material": "bean", "date": "2026-09-10", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.26", "loc": "-", "qty": 3000}, {"id": "seed-b-46", "material": "bean", "date": "2026-09-10", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-47", "material": "bean", "date": "2026-09-10", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 2000}, {"id": "seed-b-48", "material": "bean", "date": "2026-09-14", "type": "입고", "item": "므쵸베리", "code": "CFE0016", "batch": "26.09.06", "loc": "-", "qty": 200}, {"id": "seed-b-49", "material": "bean", "date": "2026-09-14", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.28", "loc": "-", "qty": 8000}, {"id": "seed-b-50", "material": "bean", "date": "2026-09-14", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-51", "material": "bean", "date": "2026-09-14", "type": "입고", "item": "에티오피아 시코 디카페인", "code": "CFE1269", "batch": "26.08.27", "loc": "-", "qty": 3500}, {"id": "seed-b-52", "material": "bean", "date": "2026-09-14", "type": "사용", "item": "에콰 루그마파타 lot2", "code": "CFE1369", "batch": "26.08.14", "loc": "영도(직원)", "qty": 500}, {"id": "seed-c-0", "material": "capsule", "date": "2026-08-24", "type": "입고", "item": "캡슐 므쵸베리 (10개입)", "code": "CSU0003", "batch": "27.07.01", "loc": "-", "qty": 1}, {"id": "seed-c-1", "material": "capsule", "date": "2026-08-26", "type": "입고", "item": "드립백 시그니처 블렌드 (28개입)", "code": "DRB0070", "batch": "27.07.06B", "loc": "-", "qty": 1}, {"id": "seed-c-2", "material": "capsule", "date": "2026-08-26", "type": "입고", "item": "드립백 15개입 [버라이어티]", "code": "DRB0071", "batch": "27.07.27C", "loc": "-", "qty": 1}, {"id": "seed-c-3", "material": "capsule", "date": "2026-08-26", "type": "입고", "item": "드립백 7개입 [버라이어티]", "code": "DRB0013", "batch": "27.07.20A", "loc": "-", "qty": 5}, {"id": "seed-c-4", "material": "capsule", "date": "2026-08-26", "type": "입고", "item": "드립백 7개입 [버라이어티]", "code": "DRB0013", "batch": "27.07.13B", "loc": "-", "qty": 1}, {"id": "seed-c-5", "material": "capsule", "date": "2026-08-26", "type": "사용", "item": "드립백 시그니처 블렌드 (28개입)", "code": "DRB0070", "batch": "27.07.06B", "loc": "본점", "qty": 1}, {"id": "seed-c-6", "material": "capsule", "date": "2026-08-26", "type": "사용", "item": "드립백 15개입 [버라이어티]", "code": "DRB0071", "batch": "27.07.27C", "loc": "본점", "qty": 1}, {"id": "seed-c-7", "material": "capsule", "date": "2026-08-26", "type": "사용", "item": "드립백 7개입 [버라이어티]", "code": "DRB0013", "batch": "27.07.20A", "loc": "본점", "qty": 5}, {"id": "seed-c-8", "material": "capsule", "date": "2026-08-26", "type": "사용", "item": "드립백 7개입 [버라이어티]", "code": "DRB0013", "batch": "27.07.13B", "loc": "본점", "qty": 1}, {"id": "seed-c-9", "material": "capsule", "date": "2026-08-28", "type": "입고", "item": "드립백 1개 [윈덤 그랜드 부산 오션 브리즈]", "code": "DRB0154", "batch": "27.07.19", "loc": "-", "qty": 160}, {"id": "seed-c-10", "material": "capsule", "date": "2026-09-02", "type": "입고", "item": "캡슐 디카페인 (10개입)", "code": "CSU0004", "batch": "27.06.28", "loc": "-", "qty": 3}, {"id": "seed-c-11", "material": "capsule", "date": "2026-09-10", "type": "입고", "item": "드립백 7개입 [에스쇼콜라]", "code": "DRB0077", "batch": "27.08.09A", "loc": "-", "qty": 5}, {"id": "seed-c-12", "material": "capsule", "date": "2026-09-11", "type": "사용", "item": "드립백 7개입 [에스쇼콜라]", "code": "DRB0077", "batch": "27.08.09A", "loc": "본점", "qty": 5}, {"id": "seed-c-13", "material": "capsule", "date": "2026-09-11", "type": "입고", "item": "캡슐 에스쇼콜라 (10개입)", "code": "CSU0001", "batch": "28.07.30", "loc": "-", "qty": 4}, {"id": "seed-c-14", "material": "capsule", "date": "2026-09-11", "type": "사용", "item": "캡슐 디카페인 (10개입)", "code": "CSU0004", "batch": "27.06.28", "loc": "마린", "qty": 3}, {"id": "seed-c-15", "material": "capsule", "date": "2026-09-11", "type": "사용", "item": "캡슐 에스쇼콜라 (10개입)", "code": "CSU0001", "batch": "28.07.30", "loc": "마린", "qty": 4}, {"id": "seed-c-16", "material": "capsule", "date": "2026-09-11", "type": "사용", "item": "캡슐 므쵸베리 (10개입)", "code": "CSU0003", "batch": "27.07.01", "loc": "휴게공간", "qty": 1}];
 
 const LOCS = ['직원식당','휴게공간','본점','마린','영도(직원)'];
+const SIZES = ['100g','200g','500g','1kg'];
 const LOC_COLOR = {
   '직원식당':'var(--series-1)',
   '휴게공간':'var(--series-2)',
@@ -546,17 +557,18 @@ function computeMonthly(recs, months){
 }
 function computeItemsUsage(recs){
   const map = new Map();
-  const ensure = (name) => {
-    if(!map.has(name)){ const o={name,total:0}; LOCS.forEach(l=>o[l]=0); map.set(name,o); }
-    return map.get(name);
+  const ensure = (name, size) => {
+    const key = name + '||' + (size||'');
+    if(!map.has(key)){ const o={name, size:size||'', total:0}; LOCS.forEach(l=>o[l]=0); map.set(key,o); }
+    return map.get(key);
   };
-  recs.forEach(r => ensure(r.item));
+  recs.forEach(r => ensure(r.item, r.size));
   recs.filter(r=>r.type==='사용').forEach(r => {
-    const o = ensure(r.item);
+    const o = ensure(r.item, r.size);
     o.total += r.qty;
     if (LOCS.includes(r.loc)) o[r.loc] += r.qty;
   });
-  return [...map.values()];
+  return [...map.values()].sort((a,b) => a.name.localeCompare(b.name,'ko') || (a.size||'').localeCompare(b.size||''));
 }
 function computeLocSummary(recs){
   const usageRecs = recs.filter(r=>r.type==='사용' && LOCS.includes(r.loc));
@@ -571,8 +583,9 @@ function computeLocSummary(recs){
 function computeStockByCode(recs){
   const map = new Map();
   recs.forEach(r => {
-    const key = r.code ? r.code : ('__noc__' + r.item);
-    if(!map.has(key)) map.set(key, {code:r.code||'', item:r.item, in:0, used:0});
+    const codeKey = r.code ? r.code : ('__noc__' + r.item);
+    const key = codeKey + '||' + (r.size||'');
+    if(!map.has(key)) map.set(key, {code:r.code||'', item:r.item, size:r.size||'', in:0, used:0});
     const g = map.get(key);
     if (r.type === '입고') g.in += r.qty; else g.used += r.qty;
     if (!g.code && r.code) g.code = r.code;
@@ -580,13 +593,13 @@ function computeStockByCode(recs){
   });
   return [...map.values()]
     .map(g => ({...g, remain: g.in - g.used}))
-    .sort((a,b) => a.item.localeCompare(b.item, 'ko'));
+    .sort((a,b) => a.item.localeCompare(b.item, 'ko') || (a.size||'').localeCompare(b.size||''));
 }
 function computeStockRows(recs){
   const map = new Map();
   recs.forEach(r => {
-    const key = r.item + '||' + r.batch;
-    if(!map.has(key)) map.set(key, {code:r.code||'', item:r.item, batch:r.batch, in:0, used:0});
+    const key = r.item + '||' + (r.size||'') + '||' + r.batch;
+    if(!map.has(key)) map.set(key, {code:r.code||'', item:r.item, size:r.size||'', batch:r.batch, in:0, used:0});
     const g = map.get(key);
     if (r.type === '입고') g.in += r.qty; else g.used += r.qty;
     if (r.code) g.code = r.code;
@@ -597,7 +610,7 @@ function computeRunningStock(recs){
   const byKey = new Map();
   const sorted = [...recs].sort((a,b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id < b.id ? -1 : 1)));
   return sorted.map(r => {
-    const key = r.item + '||' + r.batch;
+    const key = r.item + '||' + (r.size||'') + '||' + r.batch;
     const prev = byKey.get(key) || 0;
     const next = r.type === '입고' ? prev + r.qty : prev - r.qty;
     byKey.set(key, next);
@@ -870,10 +883,10 @@ function renderRecordsTable(){
   const qtyCol = detailMaterial === 'bean' ? '수량(g)' : '수량(ea)';
   const stockCol = detailMaterial === 'bean' ? '재고(g)' : '재고(ea)';
   let html = `<table><thead><tr>
-    <th>날짜</th><th>구분</th><th>품목</th><th>품목코드</th><th>${dateCol}</th><th>사용처</th><th class="num">${qtyCol}</th><th class="num">${stockCol}</th><th>작업</th>
+    <th>날짜</th><th>구분</th><th>품목</th><th>품목코드</th><th>규격</th><th>${dateCol}</th><th>사용처</th><th class="num">${qtyCol}</th><th class="num">${stockCol}</th><th>작업</th>
   </tr></thead><tbody>`;
   if (filtered.length === 0){
-    html += `<tr class="empty-row"><td colspan="9">검색 결과가 없습니다.</td></tr>`;
+    html += `<tr class="empty-row"><td colspan="10">검색 결과가 없습니다.</td></tr>`;
   } else {
     filtered.slice().reverse().forEach(r => {
       const isIn = r.type === '입고';
@@ -885,6 +898,7 @@ function renderRecordsTable(){
         <td><span class="pill ${isIn?'in':'out'}">${r.type}</span></td>
         <td>${r.item||''}</td>
         <td class="dim">${r.code||''}</td>
+        <td class="dim">${r.size||'-'}</td>
         <td>${r.batch||''}</td>
         <td>${r.loc && r.loc !== '-' ? r.loc : '<span class="dim">-</span>'}</td>
         <td class="num">${fmt(r.qty)}</td>
@@ -918,16 +932,17 @@ function renderStockTable(){
   const unit = unitOf(detailMaterial);
   const arrow = stockSortDir ? `<span class="sort-arrow">${stockSortDir === 'asc' ? '▲' : '▼'}</span>` : '';
   let html = `<table><thead><tr>
-    <th>품목코드</th><th>품목</th><th class="sortable" data-sort="batch">${dateCol}${arrow}</th><th class="num">입고량(${unit})</th><th class="num">사용량(${unit})</th><th class="num">잔여재고(${unit})</th>
+    <th>품목코드</th><th>품목</th><th>규격</th><th class="sortable" data-sort="batch">${dateCol}${arrow}</th><th class="num">입고량(${unit})</th><th class="num">사용량(${unit})</th><th class="num">잔여재고(${unit})</th>
   </tr></thead><tbody>`;
   if (filtered.length === 0){
-    html += `<tr class="empty-row"><td colspan="6">${stockHideZero ? '재고가 남아있는 항목이 없습니다.' : '검색 결과가 없습니다.'}</td></tr>`;
+    html += `<tr class="empty-row"><td colspan="7">${stockHideZero ? '재고가 남아있는 항목이 없습니다.' : '검색 결과가 없습니다.'}</td></tr>`;
   } else {
     filtered.forEach(r => {
       const remain = r.remain||0;
       html += `<tr${remain<=0?' style="color:var(--ink-muted)"':''}>
         <td class="dim">${r.code||''}</td>
         <td>${r.item||''}</td>
+        <td class="dim">${r.size||'-'}</td>
         <td>${r.batch||''}</td>
         <td class="num">${fmt(r.in)}</td>
         <td class="num">${fmt(r.used)}</td>
@@ -944,6 +959,7 @@ function renderSummary(){
   const unit = unitOf(detailMaterial);
   const itemRows = d.items_usage.map(it => `<tr>
       <td>${it.name}</td>
+      <td class="dim">${it.size||'-'}</td>
       ${LOCS.map(l => `<td class="num">${fmt(it[l]||0)}</td>`).join('')}
       <td class="num" style="font-weight:800">${fmt(it.total)}</td>
     </tr>`).join('');
@@ -960,6 +976,7 @@ function renderSummary(){
   const codeRows = d.stock_by_code.map(g => `<tr${g.remain<=0?' style="color:var(--ink-muted)"':''}>
       <td class="dim">${g.code||''}</td>
       <td>${g.item}</td>
+      <td class="dim">${g.size||'-'}</td>
       <td class="num">${fmt(g.in)}</td>
       <td class="num">${fmt(g.used)}</td>
       <td class="num" style="font-weight:800; color:${g.remain>0?'var(--ink)':'inherit'}">${fmt(g.remain)}</td>
@@ -970,7 +987,7 @@ function renderSummary(){
       <div class="card summary-card">
         <h3>품목코드별 잔여재고 · 사용량 — 날짜·배치 무관 전체 합계 (${unit})</h3>
         <div class="table-wrap">
-          <table><thead><tr><th>품목코드</th><th>품목</th><th class="num">총입고량</th><th class="num">총사용량</th><th class="num">총잔여재고</th></tr></thead>
+          <table><thead><tr><th>품목코드</th><th>품목</th><th>규격</th><th class="num">총입고량</th><th class="num">총사용량</th><th class="num">총잔여재고</th></tr></thead>
           <tbody>${codeRows}</tbody></table>
         </div>
       </div>
@@ -984,7 +1001,7 @@ function renderSummary(){
       <div class="card summary-card" style="grid-column:1 / -1;">
         <h3>품목별 · 사용처별 사용량 (${unit})</h3>
         <div class="table-wrap">
-          <table><thead><tr><th>품목</th>${LOCS.map(l=>`<th class="num">${l}</th>`).join('')}<th class="num">합계</th></tr></thead>
+          <table><thead><tr><th>품목</th><th>규격</th>${LOCS.map(l=>`<th class="num">${l}</th>`).join('')}<th class="num">합계</th></tr></thead>
           <tbody>${itemRows}</tbody></table>
         </div>
       </div>
@@ -1029,6 +1046,8 @@ const formCard = document.querySelector('.form-card');
 const fDate = document.getElementById('fDate');
 const fItem = document.getElementById('fItem');
 const fCode = document.getElementById('fCode');
+const fSize = document.getElementById('fSize');
+const fSizeField = document.getElementById('fSizeField');
 const fBatch = document.getElementById('fBatch');
 const fBatchLabel = document.getElementById('fBatchLabel');
 const fBatchHint = document.getElementById('fBatchHint');
@@ -1060,7 +1079,7 @@ function resetFormToAdd(){
   fSubmit.textContent = '저장';
   setFormType('입고');
   fDate.value = localYMD(new Date());
-  fItem.value = ''; fCode.value=''; fBatch.value=''; fQty.value=''; fLoc.value='';
+  fItem.value = ''; fCode.value=''; fSize.value=''; fBatch.value=''; fQty.value=''; fLoc.value='';
   codeAutoFilled = true;
   fBatchHint.textContent = ''; fBatchHint.className = 'hint';
   refreshFormContext();
@@ -1079,6 +1098,7 @@ function startEdit(id){
   fItem.value = rec.item;
   fCode.value = rec.code || '';
   codeAutoFilled = false;
+  fSize.value = rec.size || '';
   fBatch.value = rec.batch;
   fLoc.value = rec.type === '사용' ? rec.loc : '';
   fQty.value = rec.qty;
@@ -1135,9 +1155,10 @@ fCode.addEventListener('input', () => { codeAutoFilled = false; });
 function itemNamesFor(material){
   return [...new Set(records.filter(r=>r.material===material).map(r=>r.item))].sort((a,b)=>a.localeCompare(b,'ko'));
 }
-function batchesForItem(material, itemName, excludeId){
+function batchesForItem(material, itemName, size, excludeId){
   const map = new Map();
-  records.filter(r=>r.material===material && r.item===itemName && r.id!==excludeId).forEach(r => {
+  records.filter(r=>r.material===material && r.item===itemName && r.id!==excludeId
+    && (material!=='bean' || (r.size||'')===(size||''))).forEach(r => {
     if(!map.has(r.batch)) map.set(r.batch, {batch:r.batch, code:r.code, in:0, used:0});
     const g = map.get(r.batch);
     if (r.type==='입고') g.in += r.qty; else g.used += r.qty;
@@ -1153,6 +1174,7 @@ function refreshFormContext(){
   fBatchLabel.textContent = detailMaterial==='bean' ? '제조일자' : '소비기한';
   fBatch.placeholder = detailMaterial==='bean' ? '예: 26.09.16' : '예: 27.09.16';
   fQtyUnit.textContent = unitOf(detailMaterial);
+  fSizeField.style.display = detailMaterial==='bean' ? '' : 'none';
   itemList.innerHTML = itemNamesFor(detailMaterial).map(n=>`<option value="${n}">`).join('');
   if (fLoc.options.length <= 1){
     fLoc.innerHTML = '<option value="">선택</option>' + LOCS.map(l=>`<option value="${l}">${l}</option>`).join('');
@@ -1169,14 +1191,15 @@ fItem.addEventListener('input', () => {
     fCode.value = matches.length ? matches[matches.length-1].code : '';
   }
 });
+fSize.addEventListener('change', () => { updateBatchList(); updateBatchHint(); });
 fBatch.addEventListener('input', updateBatchHint);
 
 function updateBatchList(){
-  batchList.innerHTML = batchesForItem(detailMaterial, fItem.value, editingId).map(b=>`<option value="${b.batch}">`).join('');
+  batchList.innerHTML = batchesForItem(detailMaterial, fItem.value, fSize.value, editingId).map(b=>`<option value="${b.batch}">`).join('');
 }
 function updateBatchHint(){
   const unit = unitOf(detailMaterial);
-  const batches = batchesForItem(detailMaterial, fItem.value, editingId);
+  const batches = batchesForItem(detailMaterial, fItem.value, fSize.value, editingId);
   const match = batches.find(b => b.batch === fBatch.value);
   if (!fItem.value || !fBatch.value){
     fBatchHint.textContent = '';
@@ -1253,7 +1276,7 @@ async function fetchRecordsFromSheet(isFirstLoad){
     if (!data || data.ok !== true) throw new Error('bad response');
     usingSheetSync = true;
     setSyncBadge('live');
-    records = (data.records || []).map(r => ({...r, date: normDate(r.date), batch: (r.batch==null?'':String(r.batch)), qty: Number(r.qty)||0}));
+    records = (data.records || []).map(r => ({...r, date: normDate(r.date), batch: (r.batch==null?'':String(r.batch)), size: (r.size==null?'':String(r.size)), qty: Number(r.qty)||0}));
     renderDashboard();
     renderDetail();
   } catch(e){
@@ -1296,10 +1319,16 @@ document.getElementById('recordForm').addEventListener('submit', async (evt) => 
   formMsg.className = 'form-msg';
 
   const item = fItem.value.trim();
+  const size = detailMaterial === 'bean' ? fSize.value.trim() : '';
   const batch = fBatch.value.trim();
   const qty = Number(fQty.value);
   if (!item || !batch || !qty || qty <= 0){
     formMsg.textContent = '품목, 날짜, 수량을 확인해주세요.';
+    formMsg.className = 'form-msg err';
+    return;
+  }
+  if (detailMaterial === 'bean' && !size){
+    formMsg.textContent = '규격(그람)을 선택해주세요.';
     formMsg.className = 'form-msg err';
     return;
   }
@@ -1315,6 +1344,7 @@ document.getElementById('recordForm').addEventListener('submit', async (evt) => 
     type: formType,
     item,
     code: fCode.value.trim(),
+    size,
     batch,
     loc: formType === '사용' ? fLoc.value : '-',
     qty,
@@ -1371,9 +1401,9 @@ function exportRecordsSheetData(material){
     .sort((a,b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id < b.id ? -1 : 1)));
   const dateCol = material === 'bean' ? '제조일자' : '소비기한';
   const unit = unitOf(material);
-  const header = ['날짜','구분','품목','품목코드', dateCol, '사용처', `수량(${unit})`, `기록후 재고(${unit})`];
+  const header = ['날짜','구분','품목','품목코드','규격', dateCol, '사용처', `수량(${unit})`, `기록후 재고(${unit})`];
   const rows = withStock.map(r => [
-    r.date, r.type, r.item, r.code||'', r.batch,
+    r.date, r.type, r.item, r.code||'', r.size||'', r.batch,
     (r.loc && r.loc !== '-') ? r.loc : '',
     r.qty, r.stockAfter,
   ]);
@@ -1383,26 +1413,26 @@ function exportStockSheetData(material, hideZero){
   const d = deriveMaterialData(material);
   const dateCol = material === 'bean' ? '제조일자' : '소비기한';
   const unit = unitOf(material);
-  const header = ['품목코드','품목', dateCol, `입고량(${unit})`, `사용량(${unit})`, `잔여재고(${unit})`];
+  const header = ['품목코드','품목','규격', dateCol, `입고량(${unit})`, `사용량(${unit})`, `잔여재고(${unit})`];
   const rows = d.stock_rows
     .filter(r => !hideZero || (r.remain||0) > 0)
-    .map(r => [r.code||'', r.item, r.batch, r.in, r.used, r.remain]);
+    .map(r => [r.code||'', r.item, r.size||'', r.batch, r.in, r.used, r.remain]);
   return [header, ...rows];
 }
 function exportStockByCodeSheetData(material){
   const d = deriveMaterialData(material);
   const unit = unitOf(material);
-  const header = ['품목코드','품목', `총입고량(${unit})`, `총사용량(${unit})`, `총잔여재고(${unit})`];
-  const rows = d.stock_by_code.map(g => [g.code||'', g.item, g.in, g.used, g.remain]);
+  const header = ['품목코드','품목','규격', `총입고량(${unit})`, `총사용량(${unit})`, `총잔여재고(${unit})`];
+  const rows = d.stock_by_code.map(g => [g.code||'', g.item, g.size||'', g.in, g.used, g.remain]);
   return [header, ...rows];
 }
 function exportItemSummarySheetData(material){
   const d = deriveMaterialData(material);
   const unit = unitOf(material);
-  const header = [`품목 (사용량 단위: ${unit})`, ...LOCS, '합계'];
+  const header = [`품목 (사용량 단위: ${unit})`, '규격', ...LOCS, '합계'];
   const rows = [...d.items_usage]
     .sort((a,b) => b.total - a.total)
-    .map(it => [it.name, ...LOCS.map(l => it[l]||0), it.total]);
+    .map(it => [it.name, it.size||'', ...LOCS.map(l => it[l]||0), it.total]);
   return [header, ...rows];
 }
 function exportLocSummarySheetData(material){
@@ -1419,9 +1449,9 @@ function exportCurrentRecordsView(){
   const filtered = withStock.filter(r => !searchTerm || r.item.toLowerCase().includes(searchTerm));
   const dateCol = detailMaterial === 'bean' ? '제조일자' : '소비기한';
   const unit = unitOf(detailMaterial);
-  const header = ['날짜','구분','품목','품목코드', dateCol, '사용처', `수량(${unit})`, `기록후 재고(${unit})`];
+  const header = ['날짜','구분','품목','품목코드','규격', dateCol, '사용처', `수량(${unit})`, `기록후 재고(${unit})`];
   const rows = filtered.slice().reverse().map(r => [
-    r.date, r.type, r.item, r.code||'', r.batch,
+    r.date, r.type, r.item, r.code||'', r.size||'', r.batch,
     (r.loc && r.loc !== '-') ? r.loc : '',
     r.qty, r.stockAfter,
   ]);
@@ -1439,8 +1469,8 @@ function exportCurrentStockView(){
   }
   const dateCol = detailMaterial === 'bean' ? '제조일자' : '소비기한';
   const unit = unitOf(detailMaterial);
-  const header = ['품목코드','품목', dateCol, `입고량(${unit})`, `사용량(${unit})`, `잔여재고(${unit})`];
-  const rows = filtered.map(r => [r.code||'', r.item, r.batch, r.in, r.used, r.remain]);
+  const header = ['품목코드','품목','규격', dateCol, `입고량(${unit})`, `사용량(${unit})`, `잔여재고(${unit})`];
+  const rows = filtered.map(r => [r.code||'', r.item, r.size||'', r.batch, r.in, r.used, r.remain]);
   return [header, ...rows];
 }
 async function downloadCurrentView(){
@@ -1609,7 +1639,7 @@ function cellToYMD(v){
   return normDate(v);
 }
 function recKey(r){
-  return [r.material, r.date, r.type, String(r.item||'').trim(), String(r.batch||'').trim(),
+  return [r.material, r.date, r.type, String(r.item||'').trim(), String(r.size||'').trim(), String(r.batch||'').trim(),
           (r.loc && r.loc !== '-') ? String(r.loc).trim() : '-', Number(r.qty)||0].join('|');
 }
 function parseImportWorkbook(wb){
@@ -1620,11 +1650,11 @@ function parseImportWorkbook(wb){
     if (!ws) return;
     const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:''});
     rows.slice(1).forEach(row => {
-      const [date, type, item, code, batch, loc, qty] = row;
+      const [date, type, item, code, size, batch, loc, qty] = row;
       if (!item || (type !== '입고' && type !== '사용')) return;
       out.push({
         material, date: cellToYMD(date), type, item: String(item).trim(),
-        code: String(code||'').trim(), batch: String(batch||'').trim(),
+        code: String(code||'').trim(), size: String(size||'').trim(), batch: String(batch||'').trim(),
         loc: type === '사용' ? (String(loc||'').trim() || '-') : '-',
         qty: Number(qty)||0,
       });

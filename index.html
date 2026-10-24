@@ -891,8 +891,16 @@ function renderRecordsTable(){
   const withStock = computeRunningStock(d.recs);
   const filtered = withStock.filter(r => !searchTerm || r.item.toLowerCase().includes(searchTerm));
   const dateCol = detailMaterial === 'bean' ? '제조일자' : '소비기한';
-  const qtyCol = detailMaterial === 'bean' ? '수량(g)' : '수량(ea)';
+  const qtyCol = detailMaterial === 'bean' ? '수량(개)' : '수량(ea)';
   const stockCol = detailMaterial === 'bean' ? '재고(g)' : '재고(ea)';
+  /* 원두는 규격(g)이 지정돼 있고 수량이 그 규격의 배수면 "개수"로 보여주고,
+     규격이 없는(예전) 기록은 혼동을 피하려고 총 그람수 뒤에 g를 붙여 보여줍니다. */
+  const qtyCell = (r) => {
+    if (detailMaterial !== 'bean') return fmt(r.qty);
+    const g = SIZE_GRAMS[r.size];
+    if (g && r.qty % g === 0) return fmt(r.qty / g);
+    return fmt(r.qty) + 'g';
+  };
   let html = `<table><thead><tr>
     <th>날짜</th><th>구분</th><th>품목</th><th>품목코드</th><th>규격</th><th>${dateCol}</th><th>사용처</th><th class="num">${qtyCol}</th><th class="num">${stockCol}</th><th>작업</th>
   </tr></thead><tbody>`;
@@ -912,7 +920,7 @@ function renderRecordsTable(){
         <td class="dim">${r.size||'-'}</td>
         <td>${r.batch||''}</td>
         <td>${r.loc && r.loc !== '-' ? r.loc : '<span class="dim">-</span>'}</td>
-        <td class="num">${fmt(r.qty)}</td>
+        <td class="num">${qtyCell(r)}</td>
         <td class="num">${fmt(r.stockAfter)}</td>
         <td><div class="row-actions">
           <button type="button" class="row-btn" data-action="edit" data-id="${r.id}">수정</button>

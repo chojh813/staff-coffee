@@ -472,6 +472,7 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
                 <div class="field span-2">
                   <label for="fQty">수량 (<span id="fQtyUnit">g</span>)</label>
                   <input type="number" id="fQty" min="0" step="1" placeholder="0" required>
+                  <div class="hint" id="fQtyHint"></div>
                 </div>
               </div>
               <div class="form-actions">
@@ -507,6 +508,7 @@ const SEED_RECORDS = [{"id": "seed-b-0", "material": "bean", "date": "2026-07-20
 
 const LOCS = ['직원식당','휴게공간','본점','마린','영도(직원)'];
 const SIZES = ['100g','200g','500g','1kg'];
+const SIZE_GRAMS = {'100g':100,'200g':200,'500g':500,'1kg':1000};
 const LOC_COLOR = {
   '직원식당':'var(--series-1)',
   '휴게공간':'var(--series-2)',
@@ -1063,6 +1065,7 @@ const fBatchHint = document.getElementById('fBatchHint');
 const fLoc = document.getElementById('fLoc');
 const fQty = document.getElementById('fQty');
 const fQtyUnit = document.getElementById('fQtyUnit');
+const fQtyHint = document.getElementById('fQtyHint');
 const fSubmit = document.getElementById('fSubmit');
 const fCancelEdit = document.getElementById('fCancelEdit');
 const formMsg = document.getElementById('formMsg');
@@ -1110,9 +1113,17 @@ function startEdit(id){
   fSize.value = rec.size || '';
   fBatch.value = rec.batch;
   fLoc.value = rec.type === '사용' ? rec.loc : '';
-  fQty.value = rec.qty;
+  if (rec.material === 'bean'){
+    const g = SIZE_GRAMS[rec.size];
+    /* 규격이 있고 수량이 그 규격의 배수면 개수로 역산, 아니면(규격 도입 전 옛 기록 등)
+       비워두고 힌트에 기존 총 수량을 보여줘서 사용자가 직접 개수를 입력하게 합니다. */
+    fQty.value = (g && rec.qty % g === 0) ? (rec.qty / g) : '';
+  } else {
+    fQty.value = rec.qty;
+  }
   updateBatchList();
   updateBatchHint();
+  updateQtyHint(rec);
   renderRecordsTable();
   formCard.scrollIntoView({behavior:'smooth', block:'start'});
   fItem.focus();
@@ -1182,7 +1193,8 @@ function refreshFormContext(){
   }
   fBatchLabel.textContent = detailMaterial==='bean' ? '제조일자' : '소비기한';
   fBatch.placeholder = detailMaterial==='bean' ? '예: 26.09.16' : '예: 27.09.16';
-  fQtyUnit.textContent = unitOf(detailMaterial);
+  fQtyUnit.textContent = detailMaterial==='bean' ? '개' : unitOf(detailMaterial);
+  fQty.placeholder = detailMaterial==='bean' ? '예: 2' : '0';
   fSizeField.style.display = detailMaterial==='bean' ? '' : 'none';
   itemList.innerHTML = itemNamesFor(detailMaterial).map(n=>`<option value="${n}">`).join('');
   if (fLoc.options.length <= 1){
@@ -1190,6 +1202,32 @@ function refreshFormContext(){
   }
   updateBatchList();
   updateBatchHint();
+  updateQtyHint();
+}
+
+/* 원두는 "수량"칸에 그람이 아니라 "규격 기준 개수"를 입력받아, 규격×개수를
+   총 그람수로 자동 환산합니다 (예: 500g 규격에 2개 입력 → 1,000g). 이 환산된
+   총 그람수가 실제로 저장/집계되는 값이라, 잔여재고·사용량 계산은 전과 동일하게
+   그람 단위로 정확히 맞습니다. */
+function qtyToGrams(size, rawQty){
+  const g = SIZE_GRAMS[size];
+  const count = Number(rawQty) || 0;
+  return (g && count > 0) ? Math.round(g * count) : 0;
+}
+function updateQtyHint(editingRec){
+  if (detailMaterial !== 'bean'){ fQtyHint.textContent = ''; fQtyHint.className = 'hint'; return; }
+  const g = SIZE_GRAMS[fSize.value];
+  if (!g){
+    fQtyHint.textContent = editingRec && editingRec.qty
+      ? `규격을 선택하면 개수로 환산합니다. (기존 총 수량: ${fmt(editingRec.qty)}g)`
+      : '규격을 먼저 선택하면 개수 입력 시 총 그람수가 자동 계산됩니다.';
+    fQtyHint.className = 'hint';
+    return;
+  }
+  const count = Number(fQty.value) || 0;
+  if (!count){ fQtyHint.textContent = ''; fQtyHint.className = 'hint'; return; }
+  fQtyHint.textContent = `= 총 ${fmt(g * count)}g 로 저장됩니다`;
+  fQtyHint.className = 'hint ok';
 }
 
 fItem.addEventListener('input', () => {
@@ -1200,7 +1238,7 @@ fItem.addEventListener('input', () => {
     fCode.value = matches.length ? matches[matches.length-1].code : '';
   }
 });
-fSize.addEventListener('change', () => { updateBatchList(); updateBatchHint(); });
+fSize.addEventListener('change', () => { updateBatchList(); updateBatchHint(); updateQtyHint(); });
 fBatch.addEventListener('input', updateBatchHint);
 
 function updateBatchList(){
@@ -1226,7 +1264,7 @@ function updateBatchHint(){
     return;
   }
   if (formType === '사용'){
-    const qty = Number(fQty.value)||0;
+    const qty = detailMaterial==='bean' ? qtyToGrams(fSize.value, fQty.value) : (Number(fQty.value)||0);
     if (qty > match.remain){
       fBatchHint.textContent = `현재 재고 ${fmt(match.remain)}${unit} — 입력한 수량이 재고보다 많습니다.`;
       fBatchHint.className = 'hint warn';
@@ -1239,7 +1277,7 @@ function updateBatchHint(){
     fBatchHint.className = 'hint';
   }
 }
-fQty.addEventListener('input', updateBatchHint);
+fQty.addEventListener('input', () => { updateBatchHint(); updateQtyHint(); });
 
 document.querySelectorAll('.segmented[data-group="material2"] .seg-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1330,14 +1368,21 @@ document.getElementById('recordForm').addEventListener('submit', async (evt) => 
   const item = fItem.value.trim();
   const size = detailMaterial === 'bean' ? fSize.value.trim() : '';
   const batch = fBatch.value.trim();
-  const qty = Number(fQty.value);
-  if (!item || !batch || !qty || qty <= 0){
+  const rawQty = Number(fQty.value);
+  if (!item || !batch || !rawQty || rawQty <= 0){
     formMsg.textContent = '품목, 날짜, 수량을 확인해주세요.';
     formMsg.className = 'form-msg err';
     return;
   }
   if (detailMaterial === 'bean' && !size){
     formMsg.textContent = '규격(그람)을 선택해주세요.';
+    formMsg.className = 'form-msg err';
+    return;
+  }
+  /* 원두는 "규격 × 개수"를 총 그람수로 환산해서 저장합니다. */
+  const qty = detailMaterial === 'bean' ? qtyToGrams(size, rawQty) : rawQty;
+  if (detailMaterial === 'bean' && qty <= 0){
+    formMsg.textContent = '개수를 확인해주세요.';
     formMsg.className = 'form-msg err';
     return;
   }

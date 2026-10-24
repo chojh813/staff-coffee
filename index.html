@@ -885,6 +885,15 @@ let detailMaterial = 'bean';
 let activeSubtab = 'records';
 let searchTerm = '';
 let lastNewRecordId = null;
+let recSortCol = null; // null | 'type' | 'size' | 'batch' | 'loc'
+let recSortDir = null; // 'asc' | 'desc'
+function recSortCompare(a, b, col){
+  if (col === 'size'){
+    const ai = SIZES.indexOf(a.size); const bi = SIZES.indexOf(b.size);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  }
+  return String(a[col]||'').localeCompare(String(b[col]||''), 'ko');
+}
 
 function renderRecordsTable(){
   const d = deriveMaterialData(detailMaterial);
@@ -901,13 +910,21 @@ function renderRecordsTable(){
     if (g && r.qty % g === 0) return fmt(r.qty / g);
     return fmt(r.qty) + 'g';
   };
+  const recArrow = (col) => recSortCol === col
+    ? `<span class="sort-arrow">${recSortDir === 'asc' ? '▲' : '▼'}</span>` : '';
   let html = `<table><thead><tr>
-    <th>날짜</th><th>구분</th><th>품목</th><th>품목코드</th><th>규격</th><th>${dateCol}</th><th>사용처</th><th class="num">${qtyCol}</th><th class="num">${stockCol}</th><th>작업</th>
+    <th>날짜</th><th class="sortable" data-sort="type">구분${recArrow('type')}</th><th>품목</th><th>품목코드</th><th class="sortable" data-sort="size">규격${recArrow('size')}</th><th class="sortable" data-sort="batch">${dateCol}${recArrow('batch')}</th><th class="sortable" data-sort="loc">사용처${recArrow('loc')}</th><th class="num">${qtyCol}</th><th class="num">${stockCol}</th><th>작업</th>
   </tr></thead><tbody>`;
   if (filtered.length === 0){
     html += `<tr class="empty-row"><td colspan="10">검색 결과가 없습니다.</td></tr>`;
   } else {
-    filtered.slice().reverse().forEach(r => {
+    const listed = recSortCol
+      ? [...filtered].sort((a, b) => {
+          const cmp = recSortCompare(a, b, recSortCol);
+          return recSortDir === 'asc' ? cmp : -cmp;
+        })
+      : filtered.slice().reverse();
+    listed.forEach(r => {
       const isIn = r.type === '입고';
       const isNew = r.id === lastNewRecordId;
       const isEditing = r.id === editingId;
@@ -1159,6 +1176,19 @@ async function deleteRecordById(id){
 }
 
 document.getElementById('tblRecords').addEventListener('click', (evt) => {
+  const th = evt.target.closest('th.sortable');
+  if (th){
+    const col = th.dataset.sort;
+    if (recSortCol === col){
+      recSortDir = recSortDir === 'asc' ? 'desc' : recSortDir === 'desc' ? null : 'asc';
+      if (recSortDir === null) recSortCol = null;
+    } else {
+      recSortCol = col;
+      recSortDir = 'asc';
+    }
+    renderRecordsTable();
+    return;
+  }
   const btn = evt.target.closest('.row-btn');
   if (!btn) return;
   const id = btn.dataset.id;

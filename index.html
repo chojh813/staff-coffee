@@ -488,7 +488,7 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
         <div class="detail-panel" data-panel="stock">
           <div class="stock-toolbar">
             <label class="checkbox-label"><input type="checkbox" id="stockHideZero" checked> 재고 있는 항목만 보기</label>
-            <span class="stock-hint">제조일자 헤더를 클릭하면 정렬 순서가 바뀝니다.</span>
+            <span class="stock-hint">품목·규격·제조일자 헤더를 클릭하면 정렬 순서가 바뀝니다.</span>
           </div>
           <div class="table-wrap" id="tblStock"></div>
         </div>
@@ -958,23 +958,32 @@ function renderRecordsTable(){
 }
 
 let stockHideZero = true;
-let stockSortDir = null; // null = original order, 'asc' | 'desc' by 제조일자/소비기한
+let stockSortCol = null; // null | 'item' | 'size' | 'batch'
+let stockSortDir = null; // 'asc' | 'desc'
+function stockSortCompare(a, b, col){
+  if (col === 'size'){
+    const ai = SIZES.indexOf(a.size); const bi = SIZES.indexOf(b.size);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  }
+  return String(a[col]||'').localeCompare(String(b[col]||''), 'ko');
+}
 
 function renderStockTable(){
   const d = deriveMaterialData(detailMaterial);
   let filtered = d.stock_rows.filter(r => !searchTerm || r.item.toLowerCase().includes(searchTerm));
   if (stockHideZero) filtered = filtered.filter(r => (r.remain||0) > 0);
-  if (stockSortDir){
+  if (stockSortCol){
     filtered = [...filtered].sort((a,b) => {
-      const cmp = (a.batch||'').localeCompare(b.batch||'');
+      const cmp = stockSortCompare(a, b, stockSortCol);
       return stockSortDir === 'asc' ? cmp : -cmp;
     });
   }
   const dateCol = detailMaterial === 'bean' ? '제조일자' : '소비기한';
   const unit = unitOf(detailMaterial);
-  const arrow = stockSortDir ? `<span class="sort-arrow">${stockSortDir === 'asc' ? '▲' : '▼'}</span>` : '';
+  const stockArrow = (col) => stockSortCol === col
+    ? `<span class="sort-arrow">${stockSortDir === 'asc' ? '▲' : '▼'}</span>` : '';
   let html = `<table><thead><tr>
-    <th>품목코드</th><th>품목</th><th>규격</th><th class="sortable" data-sort="batch">${dateCol}${arrow}</th><th class="num">입고량(${unit})</th><th class="num">사용량(${unit})</th><th class="num">잔여재고(${unit})</th>
+    <th>품목코드</th><th class="sortable" data-sort="item">품목${stockArrow('item')}</th><th class="sortable" data-sort="size">규격${stockArrow('size')}</th><th class="sortable" data-sort="batch">${dateCol}${stockArrow('batch')}</th><th class="num">입고량(${unit})</th><th class="num">사용량(${unit})</th><th class="num">잔여재고(${unit})</th>
   </tr></thead><tbody>`;
   if (filtered.length === 0){
     html += `<tr class="empty-row"><td colspan="7">${stockHideZero ? '재고가 남아있는 항목이 없습니다.' : '검색 결과가 없습니다.'}</td></tr>`;
@@ -1590,9 +1599,9 @@ function exportCurrentStockView(){
   const d = deriveMaterialData(detailMaterial);
   let filtered = d.stock_rows.filter(r => !searchTerm || r.item.toLowerCase().includes(searchTerm));
   if (stockHideZero) filtered = filtered.filter(r => (r.remain||0) > 0);
-  if (stockSortDir){
+  if (stockSortCol){
     filtered = [...filtered].sort((a,b) => {
-      const cmp = (a.batch||'').localeCompare(b.batch||'');
+      const cmp = stockSortCompare(a, b, stockSortCol);
       return stockSortDir === 'asc' ? cmp : -cmp;
     });
   }
@@ -1897,7 +1906,14 @@ document.getElementById('stockHideZero').addEventListener('change', (e) => {
 document.getElementById('tblStock').addEventListener('click', (evt) => {
   const th = evt.target.closest('th.sortable');
   if (!th) return;
-  stockSortDir = stockSortDir === 'asc' ? 'desc' : stockSortDir === 'desc' ? null : 'asc';
+  const col = th.dataset.sort;
+  if (stockSortCol === col){
+    stockSortDir = stockSortDir === 'asc' ? 'desc' : stockSortDir === 'desc' ? null : 'asc';
+    if (stockSortDir === null) stockSortCol = null;
+  } else {
+    stockSortCol = col;
+    stockSortDir = 'asc';
+  }
   renderStockTable();
 });
 

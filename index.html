@@ -11,6 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- SheetJS(xlsx)는 "엑셀 다운로드/가져오기"용으로 기존부터 쓰고 있습니다. "로트별 정리" 보고서는
+     헤더 색상·회색 처리 같은 서식이 필요해서, 서식까지 쓸 수 있는 ExcelJS를 별도로 추가합니다. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
 :root{
   --bg:#F7F1E7;
@@ -418,6 +421,10 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
         <button type="button" class="btn-export btn-export-sm" id="btnImport" title="엑셀 다운로드로 받은 파일을 올리면, 구글 시트에 없는 기록만 골라 추가합니다">
           <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 10.5V2.25M8 2.25 5 5.25M8 2.25l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 11v1.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           엑셀 가져오기
+        </button>
+        <button type="button" class="btn-export btn-export-sm" id="btnLotReport" title="품목별 입출고 · 규격별 잔여 · 로트별 잔여, 3개 시트로 정리된 주간 보고용 엑셀을 내려받습니다 (원두 전체 기준)">
+          <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 2.5h7l3 3v8a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.2 8h5.6M5.2 10.3h5.6M5.2 5.7h2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          로트별 정리
         </button>
         <input type="file" id="importFile" accept=".xlsx,.xls" hidden>
       </div>
@@ -1063,6 +1070,9 @@ function renderDetail(opts){
   renderRecordsTable();
   renderStockTable();
   renderSummary();
+  /* "로트별 정리" 보고서는 원두(규격·제조일자 기준 로트) 전용이라 2차가공품 탭에서는 숨깁니다. */
+  const btnLotReport = document.getElementById('btnLotReport');
+  if (btnLotReport) btnLotReport.style.display = detailMaterial === 'bean' ? '' : 'none';
   /* refreshFormContext() rebuilds the item/batch <datalist> options, which
      can reset an in-progress keystroke in Chromium if it runs while that
      input has focus. Only rebuild it on deliberate context changes (initial
@@ -1611,6 +1621,227 @@ function exportCurrentStockView(){
   const rows = filtered.map(r => [r.code||'', r.item, r.size||'', r.batch, r.in, r.used, r.remain]);
   return [header, ...rows];
 }
+/* ---------------- 로트별 정리 (주간 보고용 3시트 엑셀) ----------------
+   원두 전체 기록을 "품목별 입출고 / 규격별 잔여 / 로트별 잔여" 3개 시트로
+   정리해서 다운로드합니다. 로트 = 품목+규격+제조일자.
+   품목이 나열되는 순서는, 지금 기록된 순서(구글 시트에 처음 등록된 순서) 기준으로
+   "이 품목이 맨 처음 나온 순서"를 따르고, 그 안에서는 제조일자가 빠른 로트부터
+   보여줍니다(먼저 써야 할 순서). */
+const LOT_REPORT_SIZE_COLS = ['1kg','500g','200g','100g','custom'];
+function buildLotReportData(){
+  const recs = records.filter(r => r.material === 'bean');
+  const itemOrder = [];
+  const seenItem = new Set();
+  recs.forEach(r => { if (!seenItem.has(r.item)){ seenItem.add(r.item); itemOrder.push(r.item); } });
+  const itemCode = new Map();
+  recs.forEach(r => { if (r.code && !itemCode.has(r.item)) itemCode.set(r.item, r.code); });
+
+  const lotMap = new Map();
+  recs.forEach(r => {
+    const key = r.item + '||' + (r.size||'') + '||' + r.batch;
+    if (!lotMap.has(key)) lotMap.set(key, {item:r.item, size:r.size||'', batch:r.batch, recs:[]});
+    lotMap.get(key).recs.push(r);
+  });
+  lotMap.forEach(lot => {
+    lot.recs.sort((a,b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id < b.id ? -1 : 1)));
+  });
+  const lots = [...lotMap.values()].sort((a,b) => {
+    const ia = itemOrder.indexOf(a.item), ib = itemOrder.indexOf(b.item);
+    if (ia !== ib) return ia - ib;
+    return (a.batch||'').localeCompare(b.batch||'');
+  });
+
+  return {itemOrder, itemCode, lots};
+}
+function batchToDate(batch){
+  /* "26.09.18" 같은 제조일자 문자열을 날짜로 바꿔서 날짜 서식이 적용되게 합니다. */
+  const m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(batch||'');
+  if (!m) return null;
+  return new Date(2000 + Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+function isoToDate(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso||'');
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+async function downloadLotReport(){
+  const btn = document.getElementById('btnLotReport');
+  const label = btn.innerHTML;
+  try{
+    if (typeof ExcelJS === 'undefined'){
+      window.alert('엑셀 작성 기능(ExcelJS)을 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침 후 다시 시도해주세요.');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = '정리 중…';
+
+    const {itemOrder, itemCode, lots} = buildLotReportData();
+    const NUMFMT = '#,##0;-#,##0;-';
+    const DATEFMT = 'yyyy-mm-dd';
+    const HEADER_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FF305496'}};
+    const HEADER_FONT = {bold:true, color:{argb:'FFFFFFFF'}, size:10};
+    const THIN = {style:'thin', color:{argb:'FFBFBFBF'}};
+    const THIN_BORDER = {top:THIN, bottom:THIN, left:THIN, right:THIN};
+    function styleHeaderRow(row){
+      row.eachCell(cell => {
+        cell.fill = HEADER_FILL;
+        cell.font = HEADER_FONT;
+        cell.alignment = {horizontal:'center', vertical:'middle'};
+        cell.border = THIN_BORDER;
+      });
+    }
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = '직원용 원두 사용량 관리';
+    wb.created = new Date();
+
+    /* ---- 시트1: 품목별 입출고 ---- */
+    const ws1 = wb.addWorksheet('품목별 입출고');
+    ws1.getCell('A1').value = '원두 품목별 입출고 내역 (품목별 · 제조일자 빠른 순)';
+    ws1.getCell('A1').font = {bold:true, size:13};
+    ws1.getCell('A2').value = '※ 로트 = 품목 + 규격 + 제조일자. "로트 잔여(g)"는 같은 로트 안에서 위에서부터 누적한 입고−출고입니다.';
+    const header1 = ['품목','품목코드','규격','제조일자','날짜','구분','사용처','입고(g)','출고(g)','로트 잔여(g)'];
+    ws1.getRow(4).values = header1;
+    styleHeaderRow(ws1.getRow(4));
+    ws1.columns = [
+      {width:34},{width:11},{width:8},{width:12},{width:12},{width:7},{width:12},{width:10},{width:10},{width:12},
+    ];
+
+    let r1 = 5;
+    lots.forEach(lot => {
+      let running = 0;
+      lot.recs.forEach(rec => {
+        const isIn = rec.type === '입고';
+        running += isIn ? rec.qty : -rec.qty;
+        const row = ws1.getRow(r1);
+        row.getCell(1).value = lot.item;
+        row.getCell(2).value = rec.code || '';
+        row.getCell(3).value = lot.size;
+        row.getCell(4).value = batchToDate(lot.batch);
+        row.getCell(4).numFmt = DATEFMT;
+        row.getCell(5).value = isoToDate(rec.date);
+        row.getCell(5).numFmt = DATEFMT;
+        row.getCell(6).value = isIn ? '입고' : '출고';
+        row.getCell(6).fill = {type:'pattern', pattern:'solid', fgColor:{argb: isIn ? 'FFE2EFDA' : 'FFFCE4D6'}};
+        row.getCell(7).value = isIn ? '' : (rec.loc && rec.loc !== '-' ? rec.loc : '');
+        if (isIn) row.getCell(8).value = rec.qty; else row.getCell(9).value = rec.qty;
+        row.getCell(8).numFmt = NUMFMT;
+        row.getCell(9).numFmt = NUMFMT;
+        row.getCell(10).value = running;
+        row.getCell(10).numFmt = NUMFMT;
+        row.getCell(10).font = {bold:true};
+        row.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
+        r1++;
+      });
+    });
+    const lastRow1 = r1 - 1;
+    ws1.autoFilter = {from:'A4', to:`J${lastRow1}`};
+    ws1.views = [{state:'frozen', ySplit:4}];
+
+    /* ---- 시트2: 규격별 잔여 ---- */
+    const ws2 = wb.addWorksheet('규격별 잔여');
+    ws2.getCell('A1').value = '품목 × 규격별 잔여 수량 (g)';
+    ws2.getCell('A1').font = {bold:true, size:13};
+    ws2.getCell('A2').value = '잔여 = 입고 합계 − 출고 합계 (품목별 입출고 시트 기준으로 자동 계산)';
+    const header2 = ['품목','품목코드', ...LOT_REPORT_SIZE_COLS, '합계'];
+    ws2.getRow(4).values = header2;
+    styleHeaderRow(ws2.getRow(4));
+    ws2.columns = [{width:34},{width:11},{width:9},{width:9},{width:9},{width:9},{width:9},{width:11}];
+
+    const grandTotal = LOT_REPORT_SIZE_COLS.map(() => 0);
+    const customNotes = [];
+    let r2 = 5;
+    itemOrder.forEach(item => {
+      const itemRecs = records.filter(r => r.material === 'bean' && r.item === item);
+      const cols = LOT_REPORT_SIZE_COLS.map(sz => {
+        let total = 0;
+        itemRecs.forEach(r => { if ((r.size||'') === sz) total += (r.type === '입고' ? r.qty : -r.qty); });
+        return total;
+      });
+      cols.forEach((v,i) => { grandTotal[i] += v; });
+      const sum = cols.reduce((a,b)=>a+b, 0);
+      const row = ws2.getRow(r2);
+      row.getCell(1).value = item;
+      row.getCell(2).value = itemCode.get(item) || '';
+      cols.forEach((v,i) => { row.getCell(3+i).value = v; row.getCell(3+i).numFmt = NUMFMT; });
+      row.getCell(3+cols.length).value = sum;
+      row.getCell(3+cols.length).numFmt = NUMFMT;
+      row.getCell(3+cols.length).font = {bold:true};
+      row.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
+      const customTotal = cols[LOT_REPORT_SIZE_COLS.indexOf('custom')];
+      if (customTotal > 0) customNotes.push(`${item} ${fmt(customTotal)}g`);
+      r2++;
+    });
+    const totalRow = ws2.getRow(r2);
+    totalRow.getCell(1).value = '합계';
+    totalRow.getCell(1).font = {bold:true};
+    grandTotal.forEach((v,i) => { totalRow.getCell(3+i).value = v; totalRow.getCell(3+i).numFmt = NUMFMT; totalRow.getCell(3+i).font = {bold:true}; });
+    totalRow.getCell(3+grandTotal.length).value = grandTotal.reduce((a,b)=>a+b,0);
+    totalRow.getCell(3+grandTotal.length).numFmt = NUMFMT;
+    totalRow.getCell(3+grandTotal.length).font = {bold:true};
+    totalRow.eachCell({includeEmpty:true}, cell => { cell.border = {top:{style:'double',color:{argb:'FF305496'}}}; });
+    if (customNotes.length){
+      ws2.getCell(`A${r2+2}`).value = `※ custom 규격: ${customNotes.join(', ')}`;
+    }
+    ws2.views = [{state:'frozen', xSplit:2, ySplit:4}];
+
+    /* ---- 시트3: 로트별 잔여 ---- */
+    const ws3 = wb.addWorksheet('로트별 잔여');
+    ws3.getCell('A1').value = '로트별 잔여 — 제조일자 빠른 순 (먼저 써야 할 순서)';
+    ws3.getCell('A1').font = {bold:true, size:13};
+    ws3.getCell('A2').value = '잔여 0인 로트는 회색 글씨로 표시됩니다.';
+    const header3 = ['품목','규격','제조일자','입고(g)','출고(g)','잔여(g)','최근 입출고일'];
+    ws3.getRow(4).values = header3;
+    styleHeaderRow(ws3.getRow(4));
+    ws3.columns = [{width:34},{width:8},{width:12},{width:10},{width:10},{width:10},{width:13}];
+
+    let r3 = 5;
+    lots.forEach(lot => {
+      const inSum = lot.recs.filter(r=>r.type==='입고').reduce((a,r)=>a+r.qty,0);
+      const outSum = lot.recs.filter(r=>r.type==='사용').reduce((a,r)=>a+r.qty,0);
+      const remain = inSum - outSum;
+      const lastDate = lot.recs.reduce((m,r)=> (r.date > m ? r.date : m), lot.recs[0].date);
+      const row = ws3.getRow(r3);
+      row.getCell(1).value = lot.item;
+      row.getCell(2).value = lot.size;
+      row.getCell(3).value = batchToDate(lot.batch);
+      row.getCell(3).numFmt = DATEFMT;
+      row.getCell(4).value = inSum; row.getCell(4).numFmt = NUMFMT;
+      row.getCell(5).value = outSum; row.getCell(5).numFmt = NUMFMT;
+      row.getCell(6).value = remain; row.getCell(6).numFmt = NUMFMT;
+      row.getCell(7).value = isoToDate(lastDate);
+      row.getCell(7).numFmt = DATEFMT;
+      row.eachCell({includeEmpty:true}, cell => {
+        cell.border = THIN_BORDER;
+        if (remain <= 0) cell.font = {color:{argb:'FF999999'}};
+      });
+      r3++;
+    });
+    const lastRow3 = r3 - 1;
+    ws3.autoFilter = {from:'A4', to:`G${lastRow3}`};
+    ws3.views = [{state:'frozen', ySplit:4}];
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const today = localYMD(new Date());
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `원두_로트별정리_${today}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch(e){
+    console.error(e);
+    window.alert('로트별 정리 파일을 만드는 중 오류가 발생했습니다. 다시 시도해주세요.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = label;
+  }
+}
+document.getElementById('btnLotReport').addEventListener('click', downloadLotReport);
+
 async function downloadCurrentView(){
   const btn = document.getElementById('btnExportView');
   try{

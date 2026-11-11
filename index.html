@@ -1083,22 +1083,34 @@ function renderDetail(opts){
   fitTableWraps();
 }
 
-/* ---------------- FULL-HEIGHT TABLE SIZING ---------------- */
-function fitTableWraps(){
+/* ---------------- FULL-HEIGHT TABLE SIZING ----------------
+   매 9초 폴링·입력·삭제 때마다 renderDetail()이 호출되는데, 예전에는 이 함수가
+   매번 테이블 높이를 0px로 접었다가 한 프레임 뒤에 다시 펼치는 방식이어서, 그
+   순간 테이블이 깜빡이며 "리셋"되는 것처럼 보였습니다. 실제로 폭/높이가 바뀌는
+   경우(창 크기 변경, 탭 전환으로 패널이 보였다 숨겨질 때)만 0px로 접었다가
+   다시 재는 게 필요하고, 데이터만 갱신되는 일반적인 재렌더링은 그냥 바로
+   다시 계산해서 끼워 넣으면 됩니다 — 그래서 강제로 접는 경우와 아닌 경우를
+   구분합니다. */
+function fitTableWraps(forceReset){
   if (!document.getElementById('tab-detail').classList.contains('active')) return;
   const activePanel = document.querySelector('.detail-panel.active');
   if (!activePanel || activePanel.dataset.panel === 'summary') return;
   const wrap = activePanel.querySelector('.table-wrap');
   if (!wrap) return;
-  wrap.style.height = '0px';
-  requestAnimationFrame(() => {
+  const apply = () => {
     const top = wrap.getBoundingClientRect().top;
     const h = Math.max(240, Math.round(window.innerHeight - top - 20));
     wrap.style.height = h + 'px';
-  });
+  };
+  if (forceReset){
+    wrap.style.height = '0px';
+    requestAnimationFrame(apply);
+  } else {
+    apply();
+  }
 }
-window.addEventListener('resize', fitTableWraps);
-window.addEventListener('orientationchange', fitTableWraps);
+window.addEventListener('resize', () => fitTableWraps(true));
+window.addEventListener('orientationchange', () => fitTableWraps(true));
 
 /* ================= ADD-RECORD FORM ================= */
 let formType = '입고';
@@ -2095,7 +2107,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     const target = btn.dataset.tab;
     document.querySelectorAll('.tabpanel').forEach(p=>p.classList.toggle('active', p.id === 'tab-'+target));
-    fitTableWraps();
+    fitTableWraps(true);
   });
 });
 
@@ -2109,7 +2121,7 @@ document.querySelectorAll('.subtab-btn').forEach(btn => {
     searchBox.style.display = activeSubtab === 'summary' ? 'none' : '';
     document.getElementById('btnExportView').style.display = activeSubtab === 'summary' ? 'none' : '';
     document.getElementById('btnImport').style.display = activeSubtab === 'summary' ? 'none' : '';
-    fitTableWraps();
+    fitTableWraps(true);
   });
 });
 

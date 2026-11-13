@@ -1658,15 +1658,21 @@ function buildLotReportData(){
   return {itemOrder, itemCode, lots};
 }
 function batchToDate(batch){
-  /* "26.09.18" 같은 제조일자 문자열을 날짜로 바꿔서 날짜 서식이 적용되게 합니다. */
+  /* "26.09.18" 같은 제조일자 문자열을 날짜로 바꿔서 날짜 서식이 적용되게 합니다.
+     new Date(y,m,d)로 만들면 "내 브라우저의 현지 시각 자정"이 되는데, ExcelJS가
+     엑셀 날짜로 바꿀 때는 그 날짜의 UTC 기준 값을 읽습니다. 한국(UTC+9)처럼 UTC보다
+     시간이 빠른 지역에서는 현지 자정이 UTC로는 "전날 오후"가 되어버려서, 다운로드한
+     엑셀에서 날짜가 전부 하루씩 당겨져 보이는 문제가 있었습니다. Date.UTC로 만들면
+     이 날짜의 UTC 값 자체가 의도한 연/월/일이 되어 어느 시간대에서 내려받아도
+     하루가 밀리지 않습니다. */
   const m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(batch||'');
   if (!m) return null;
-  return new Date(2000 + Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return new Date(Date.UTC(2000 + Number(m[1]), Number(m[2]) - 1, Number(m[3])));
 }
 function isoToDate(iso){
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso||'');
   if (!m) return null;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
 }
 async function downloadLotReport(){
   const btn = document.getElementById('btnLotReport');

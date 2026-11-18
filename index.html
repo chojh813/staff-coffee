@@ -619,6 +619,19 @@ function computeStockByCode(recs){
     .map(g => ({...g, remain: g.in - g.used}))
     .sort((a,b) => a.item.localeCompare(b.item, 'ko') || (a.size||'').localeCompare(b.size||''));
 }
+/* computeStockByCode는 품목코드+규격별로 쪼개서 보여주는데, 사용량 요약 화면에는
+   규격 구분 없이 "이 품목 전체"로 합친 총수량/사용수량/잔여수량도 필요해서 따로 둡니다. */
+function computeStockByItem(recs){
+  const map = new Map();
+  recs.forEach(r => {
+    if(!map.has(r.item)) map.set(r.item, {item:r.item, in:0, used:0});
+    const g = map.get(r.item);
+    if (r.type === '입고') g.in += r.qty; else g.used += r.qty;
+  });
+  return [...map.values()]
+    .map(g => ({...g, remain: g.in - g.used}))
+    .sort((a,b) => a.item.localeCompare(b.item, 'ko'));
+}
 function computeStockRows(recs){
   const map = new Map();
   recs.forEach(r => {
@@ -652,6 +665,7 @@ function deriveMaterialData(material){
     loc_summary: computeLocSummary(recs),
     stock_rows: computeStockRows(recs),
     stock_by_code: computeStockByCode(recs),
+    stock_by_item: computeStockByItem(recs),
   };
 }
 
@@ -1039,6 +1053,14 @@ function renderSummary(){
       <td class="num">${fmt(g.used)}</td>
       <td class="num" style="font-weight:800; color:${g.remain>0?'var(--ink)':'inherit'}">${fmt(g.remain)}</td>
     </tr>`).join('');
+  /* 규격 구분 없이 품목 하나로 합친 총수량/사용수량/잔여수량. */
+  const itemTotalRows = d.stock_by_item.map(g => `<tr${g.remain<=0?' style="color:var(--ink-muted)"':''}>
+      <td>${g.item}</td>
+      <td class="num">${fmt(g.in)}</td>
+      <td class="num">${fmt(g.used)}</td>
+      <td class="num" style="font-weight:800; color:${g.remain>0?'var(--ink)':'inherit'}">${fmt(g.remain)}</td>
+    </tr>`).join('');
+  const itemTotalSum = d.stock_by_item.reduce((acc,g) => ({in:acc.in+g.in, used:acc.used+g.used, remain:acc.remain+g.remain}), {in:0,used:0,remain:0});
 
   document.getElementById('summaryWrap').innerHTML = `
     <div class="summary-grid">
@@ -1054,6 +1076,18 @@ function renderSummary(){
         <div class="table-wrap">
           <table><thead><tr><th>사용처</th><th class="num">사용량</th><th>비율</th></tr></thead>
           <tbody>${locRows}</tbody></table>
+        </div>
+      </div>
+      <div class="card summary-card" style="grid-column:1 / -1;">
+        <h3>품목별 합산 총수량 · 사용수량 · 잔여수량 — 규격 구분 없이 전체 합계 (${unit})</h3>
+        <div class="table-wrap">
+          <table><thead><tr><th>품목</th><th class="num">총수량</th><th class="num">사용수량</th><th class="num">잔여수량</th></tr></thead>
+          <tbody>${itemTotalRows}<tr style="border-top:2px solid var(--accent); font-weight:800;">
+              <td>합계</td>
+              <td class="num">${fmt(itemTotalSum.in)}</td>
+              <td class="num">${fmt(itemTotalSum.used)}</td>
+              <td class="num">${fmt(itemTotalSum.remain)}</td>
+            </tr></tbody></table>
         </div>
       </div>
       <div class="card summary-card" style="grid-column:1 / -1;">

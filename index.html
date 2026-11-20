@@ -340,6 +340,47 @@ th.sortable{cursor:pointer; user-select:none;}
 th.sortable:hover{color:var(--ink);}
 th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
 
+/* ---- 오늘의 커피 캘린더 ---- */
+.coffee-toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
+.coffee-nav{display:flex; gap:8px; flex-wrap:wrap;}
+.coffee-range{font-size:13px; font-weight:700; color:var(--ink-2);}
+.coffee-cal-wrap{overflow:auto; padding:10px;}
+.coffee-hint{margin-top:10px; font-size:11.5px; color:var(--ink-muted);}
+table.coffee-cal-table{width:100%; border-collapse:separate; border-spacing:0 6px; min-width:860px; font-size:12.5px;}
+.coffee-cal-table thead th{position:static; background:transparent; border-bottom:none; padding:4px 8px; text-align:center; font-size:12px; color:var(--ink-2); text-transform:none;}
+.coffee-cal-table th.cc-label-col, .coffee-cal-table td.cc-label-col{width:92px; min-width:92px; white-space:normal;}
+.coffee-cal-table th.cc-sat{color:var(--series-1);}
+.coffee-cal-table th.cc-sun{color:#c0392b;}
+tr.cc-date-row td{background:var(--surface-2); border:1px solid var(--border); border-right:none; border-bottom:none; font-weight:800; text-align:center; padding:6px 4px;}
+tr.cc-date-row td:last-child{border-right:1px solid var(--border);}
+tr.cc-date-row td.cc-label-col{background:transparent; border:none;}
+tr.cc-date-row td.cc-sat{color:var(--series-1);}
+tr.cc-date-row td.cc-sun{color:#c0392b;}
+tr.cc-row td{border:1px solid var(--border); border-right:none; border-top:none; vertical-align:top; padding:0;}
+tr.cc-row td:last-child{border-right:1px solid var(--border);}
+tr.cc-row:last-of-type td{border-bottom:1px solid var(--border);}
+tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; color:var(--ink-2); font-size:11.5px; padding:8px 8px 8px 2px; vertical-align:middle;}
+.cc-cell{min-height:52px; padding:6px 7px; cursor:pointer; background:var(--surface); white-space:normal;}
+.cc-cell:hover{background:var(--surface-2);}
+.cc-entry{font-weight:700; color:var(--ink); line-height:1.4;}
+.cc-batch{font-size:10.5px; color:var(--ink-muted); line-height:1.4; margin-bottom:3px;}
+.cc-empty{color:var(--ink-muted); font-size:11.5px;}
+.cc-noservice{color:var(--ink-muted); font-style:italic; font-size:11.5px;}
+
+/* ---- 모달 ---- */
+.modal-overlay{display:none; position:fixed; inset:0; background:rgba(20,14,8,.45); z-index:100; align-items:center; justify-content:center; padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal-card{background:var(--surface); border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow); padding:20px 22px; width:100%; max-width:480px; max-height:88vh; overflow:auto;}
+.modal-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+.modal-head h3{margin:0; font-size:15.5px; font-weight:800;}
+.modal-close{appearance:none; border:none; background:transparent; cursor:pointer; font-size:20px; line-height:1; color:var(--ink-muted); padding:2px 6px;}
+.modal-close:hover{color:var(--ink);}
+#coffeeNoServiceWrap{margin-bottom:12px;}
+.cc-row-fields{display:flex; flex-wrap:wrap; gap:8px; align-items:end; margin-bottom:10px; padding-bottom:10px; border-bottom:1px dashed var(--border);}
+.cc-row-fields:last-of-type{border-bottom:none; margin-bottom:2px;}
+.cc-row-fields .field{min-width:90px;}
+.cc-row-fields .cc-del-btn{flex:0 0 auto; align-self:center;}
+
 @media (max-width:640px){
   .brand h1{font-size:16.5px;}
   .stat-tile .value{font-size:26px;}
@@ -360,6 +401,7 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
       <nav class="maintabs" role="tablist">
         <button class="tab-btn active" data-tab="dashboard" type="button">대시보드</button>
         <button class="tab-btn" data-tab="detail" type="button">상세 데이터</button>
+        <button class="tab-btn" data-tab="coffee" type="button">오늘의 커피</button>
       </nav>
       <button type="button" class="btn-export" id="btnExportExcel" title="원두·2차가공품의 입출고 기록·잔여재고(전체/재고있음만)·사용량 요약을 엑셀 파일로 내려받습니다">
         <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 1.5v8.25M8 9.75 5 6.75M8 9.75l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 11v1.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -502,6 +544,21 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
         <div class="detail-panel" data-panel="summary"><div id="summaryWrap"></div></div>
       </div>
     </section>
+
+    <section id="tab-coffee" class="tabpanel">
+      <div class="coffee-toolbar">
+        <div class="coffee-nav">
+          <button type="button" class="btn-ghost" id="ccPrev">◀ 이전 4주</button>
+          <button type="button" class="btn-ghost" id="ccToday">이번 주로</button>
+          <button type="button" class="btn-ghost" id="ccNext">다음 4주 ▶</button>
+        </div>
+        <span class="coffee-range" id="ccRangeLabel"></span>
+      </div>
+      <div class="table-wrap coffee-cal-wrap">
+        <table class="coffee-cal-table" id="coffeeCalTable"></table>
+      </div>
+      <p class="coffee-hint">칸을 클릭하면 그 날의 원두를 입력·수정할 수 있어요. 직원식당은 품목·중량·수량·제조일자를, 생산부 휴게실은 품목명만 입력합니다.</p>
+    </section>
   </main>
 
   <footer class="foot">
@@ -510,6 +567,26 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
 </div>
 
 <div id="tooltip"></div>
+
+<div class="modal-overlay" id="coffeeModalOverlay">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="coffeeModalTitle">원두 입력</h3>
+      <button type="button" class="modal-close" id="coffeeModalClose" aria-label="닫기">×</button>
+    </div>
+    <label class="checkbox-label" id="coffeeNoServiceWrap"><input type="checkbox" id="coffeeNoServiceCk"> 이 날은 제공 안 함</label>
+    <div id="coffeeModalRows"></div>
+    <datalist id="ccSizeList">
+      <option value="100g"><option value="200g"><option value="500g"><option value="1kg">
+    </datalist>
+    <button type="button" class="btn-ghost" id="coffeeAddRowBtn">+ 원두 추가</button>
+    <div class="form-actions">
+      <button type="button" class="btn-primary" id="coffeeModalSave">저장</button>
+      <button type="button" class="btn-ghost" id="coffeeModalCancel">취소</button>
+      <span class="form-msg" id="coffeeModalMsg"></span>
+    </div>
+  </div>
+</div>
 
 <script>
 const SEED_RECORDS = [{"id": "seed-b-0", "material": "bean", "date": "2026-07-20", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "-", "qty": 32000}, {"id": "seed-b-1", "material": "bean", "date": "2026-08-07", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 3000}, {"id": "seed-b-2", "material": "bean", "date": "2026-08-07", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 2000}, {"id": "seed-b-3", "material": "bean", "date": "2026-08-14", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.29", "loc": "-", "qty": 2000}, {"id": "seed-b-4", "material": "bean", "date": "2026-08-14", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.30", "loc": "-", "qty": 500}, {"id": "seed-b-5", "material": "bean", "date": "2026-08-19", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.05", "loc": "-", "qty": 500}, {"id": "seed-b-6", "material": "bean", "date": "2026-08-19", "type": "입고", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.07.30", "loc": "-", "qty": 500}, {"id": "seed-b-7", "material": "bean", "date": "2026-08-19", "type": "입고", "item": "므쵸베리", "code": "CFE0016", "batch": "26.08.02", "loc": "-", "qty": 500}, {"id": "seed-b-8", "material": "bean", "date": "2026-08-19", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-9", "material": "bean", "date": "2026-08-19", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-10", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.28", "loc": "-", "qty": 500}, {"id": "seed-b-11", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "부산", "code": "CFE0012", "batch": "26.08.12", "loc": "-", "qty": 1000}, {"id": "seed-b-12", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.08.13", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-13", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "에티오피아 시코 디카페인", "code": "CFE1269", "batch": "26.07.30", "loc": "-", "qty": 500}, {"id": "seed-b-14", "material": "bean", "date": "2026-08-24", "type": "입고", "item": "에콰 루그마파타 lot2", "code": "CFE1369", "batch": "26.08.14", "loc": "-", "qty": 500}, {"id": "seed-b-15", "material": "bean", "date": "2026-08-25", "type": "사용", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.08.13", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-16", "material": "bean", "date": "2026-08-25", "type": "사용", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.07.30", "loc": "직원식당", "qty": 500}, {"id": "seed-b-17", "material": "bean", "date": "2026-08-26", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 3100}, {"id": "seed-b-18", "material": "bean", "date": "2026-08-27", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.14", "loc": "-", "qty": 2000}, {"id": "seed-b-19", "material": "bean", "date": "2026-08-27", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 900}, {"id": "seed-b-20", "material": "bean", "date": "2026-08-27", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "본점", "qty": 2000}, {"id": "seed-b-21", "material": "bean", "date": "2026-08-28", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-22", "material": "bean", "date": "2026-08-28", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-23", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.12", "loc": "-", "qty": 4000}, {"id": "seed-b-24", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.19", "loc": "-", "qty": 1000}, {"id": "seed-b-25", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.11", "loc": "-", "qty": 500}, {"id": "seed-b-26", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.18", "loc": "-", "qty": 200}, {"id": "seed-b-27", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에티오피아 단체 워시드", "code": "CFE1273", "batch": "26.08.13", "loc": "-", "qty": 500}, {"id": "seed-b-28", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.11", "loc": "-", "qty": 500}, {"id": "seed-b-29", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.08.10", "loc": "-", "qty": 200}, {"id": "seed-b-30", "material": "bean", "date": "2026-08-28", "type": "입고", "item": "므쵸베리", "code": "CFE0016", "batch": "26.08.11", "loc": "-", "qty": 1000}, {"id": "seed-b-31", "material": "bean", "date": "2026-08-28", "type": "사용", "item": "에티오피아 단체 워시드", "code": "CFE1273", "batch": "26.08.13", "loc": "직원식당", "qty": 500}, {"id": "seed-b-32", "material": "bean", "date": "2026-08-29", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-33", "material": "bean", "date": "2026-09-01", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 2000}, {"id": "seed-b-34", "material": "bean", "date": "2026-09-02", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-35", "material": "bean", "date": "2026-09-04", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-36", "material": "bean", "date": "2026-09-04", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.27", "loc": "-", "qty": 500}, {"id": "seed-b-37", "material": "bean", "date": "2026-09-07", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-38", "material": "bean", "date": "2026-09-07", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-39", "material": "bean", "date": "2026-09-07", "type": "입고", "item": "프루티봉봉", "code": "CFE0008", "batch": "26.08.19", "loc": "-", "qty": 1000}, {"id": "seed-b-40", "material": "bean", "date": "2026-09-08", "type": "사용", "item": "므쵸베리", "code": "CFE0016", "batch": "26.08.02", "loc": "직원식당", "qty": 500}, {"id": "seed-b-41", "material": "bean", "date": "2026-09-08", "type": "사용", "item": "므쵸베리", "code": "CFE0016", "batch": "26.08.11", "loc": "직원식당", "qty": 1000}, {"id": "seed-b-42", "material": "bean", "date": "2026-09-08", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-43", "material": "bean", "date": "2026-09-09", "type": "입고", "item": "에티오피아 사포 모스토 무산소 내추럴", "code": "CFE1377", "batch": "26.09.03", "loc": "-", "qty": 500}, {"id": "seed-b-44", "material": "bean", "date": "2026-09-10", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.24", "loc": "-", "qty": 2000}, {"id": "seed-b-45", "material": "bean", "date": "2026-09-10", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.26", "loc": "-", "qty": 3000}, {"id": "seed-b-46", "material": "bean", "date": "2026-09-10", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-47", "material": "bean", "date": "2026-09-10", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "직원식당", "qty": 2000}, {"id": "seed-b-48", "material": "bean", "date": "2026-09-14", "type": "입고", "item": "므쵸베리", "code": "CFE0016", "batch": "26.09.06", "loc": "-", "qty": 200}, {"id": "seed-b-49", "material": "bean", "date": "2026-09-14", "type": "입고", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.08.28", "loc": "-", "qty": 8000}, {"id": "seed-b-50", "material": "bean", "date": "2026-09-14", "type": "사용", "item": "에스쇼콜라", "code": "CFE0004", "batch": "26.07.15", "loc": "휴게공간", "qty": 1000}, {"id": "seed-b-51", "material": "bean", "date": "2026-09-14", "type": "입고", "item": "에티오피아 시코 디카페인", "code": "CFE1269", "batch": "26.08.27", "loc": "-", "qty": 3500}, {"id": "seed-b-52", "material": "bean", "date": "2026-09-14", "type": "사용", "item": "에콰 루그마파타 lot2", "code": "CFE1369", "batch": "26.08.14", "loc": "영도(직원)", "qty": 500}, {"id": "seed-c-0", "material": "capsule", "date": "2026-08-24", "type": "입고", "item": "캡슐 므쵸베리 (10개입)", "code": "CSU0003", "batch": "27.07.01", "loc": "-", "qty": 1}, {"id": "seed-c-1", "material": "capsule", "date": "2026-08-26", "type": "입고", "item": "드립백 시그니처 블렌드 (28개입)", "code": "DRB0070", "batch": "27.07.06B", "loc": "-", "qty": 1}, {"id": "seed-c-2", "material": "capsule", "date": "2026-08-26", "type": "입고", "item": "드립백 15개입 [버라이어티]", "code": "DRB0071", "batch": "27.07.27C", "loc": "-", "qty": 1}, {"id": "seed-c-3", "material": "capsule", "date": "2026-08-26", "type": "입고", "item": "드립백 7개입 [버라이어티]", "code": "DRB0013", "batch": "27.07.20A", "loc": "-", "qty": 5}, {"id": "seed-c-4", "material": "capsule", "date": "2026-08-26", "type": "입고", "item": "드립백 7개입 [버라이어티]", "code": "DRB0013", "batch": "27.07.13B", "loc": "-", "qty": 1}, {"id": "seed-c-5", "material": "capsule", "date": "2026-08-26", "type": "사용", "item": "드립백 시그니처 블렌드 (28개입)", "code": "DRB0070", "batch": "27.07.06B", "loc": "본점", "qty": 1}, {"id": "seed-c-6", "material": "capsule", "date": "2026-08-26", "type": "사용", "item": "드립백 15개입 [버라이어티]", "code": "DRB0071", "batch": "27.07.27C", "loc": "본점", "qty": 1}, {"id": "seed-c-7", "material": "capsule", "date": "2026-08-26", "type": "사용", "item": "드립백 7개입 [버라이어티]", "code": "DRB0013", "batch": "27.07.20A", "loc": "본점", "qty": 5}, {"id": "seed-c-8", "material": "capsule", "date": "2026-08-26", "type": "사용", "item": "드립백 7개입 [버라이어티]", "code": "DRB0013", "batch": "27.07.13B", "loc": "본점", "qty": 1}, {"id": "seed-c-9", "material": "capsule", "date": "2026-08-28", "type": "입고", "item": "드립백 1개 [윈덤 그랜드 부산 오션 브리즈]", "code": "DRB0154", "batch": "27.07.19", "loc": "-", "qty": 160}, {"id": "seed-c-10", "material": "capsule", "date": "2026-09-02", "type": "입고", "item": "캡슐 디카페인 (10개입)", "code": "CSU0004", "batch": "27.06.28", "loc": "-", "qty": 3}, {"id": "seed-c-11", "material": "capsule", "date": "2026-09-10", "type": "입고", "item": "드립백 7개입 [에스쇼콜라]", "code": "DRB0077", "batch": "27.08.09A", "loc": "-", "qty": 5}, {"id": "seed-c-12", "material": "capsule", "date": "2026-09-11", "type": "사용", "item": "드립백 7개입 [에스쇼콜라]", "code": "DRB0077", "batch": "27.08.09A", "loc": "본점", "qty": 5}, {"id": "seed-c-13", "material": "capsule", "date": "2026-09-11", "type": "입고", "item": "캡슐 에스쇼콜라 (10개입)", "code": "CSU0001", "batch": "28.07.30", "loc": "-", "qty": 4}, {"id": "seed-c-14", "material": "capsule", "date": "2026-09-11", "type": "사용", "item": "캡슐 디카페인 (10개입)", "code": "CSU0004", "batch": "27.06.28", "loc": "마린", "qty": 3}, {"id": "seed-c-15", "material": "capsule", "date": "2026-09-11", "type": "사용", "item": "캡슐 에스쇼콜라 (10개입)", "code": "CSU0001", "batch": "28.07.30", "loc": "마린", "qty": 4}, {"id": "seed-c-16", "material": "capsule", "date": "2026-09-11", "type": "사용", "item": "캡슐 므쵸베리 (10개입)", "code": "CSU0003", "batch": "27.07.01", "loc": "휴게공간", "qty": 1}];
@@ -1421,6 +1498,241 @@ fQty.addEventListener('input', () => { updateBatchHint(); updateQtyHint(); });
 /* 원두/2차가공품 세그먼트 버튼 클릭 처리는 뒤로가기 히스토리까지 함께 관리하는
    navigateTo()로 아래 WIRING 쪽에서 한 번에 묶어서 등록합니다. */
 
+/* ================= 오늘의 커피 캘린더 ================= */
+/* 주간 입출고 기록과는 별개로, "오늘은 어떤 원두가 나가는지" 미리 계획해서 보여주는
+   캘린더입니다. 직원식당은 품목·중량·수량·제조일자까지, 생산부 휴게실은 품목명만
+   입력합니다. 하루 한 칸에 제조일자가 다른 원두를 여러 개 함께 넣는 경우도 있어서
+   (예: 블렌드를 두 가지 원두로 번갈아 제공) 칸마다 "목록(entries)"으로 관리하고,
+   같은 칸을 다시 클릭하면 모달에서 추가·수정·삭제할 수 있습니다. */
+let coffeeCalEntries = []; // {id, date:'YYYY-MM-DD', loc:'canteen'|'production', item, size, qty, batch, noService}
+const CC_WEEKDAYS = ['월','화','수','목','금','토','일'];
+const CC_WEEKS_SHOWN = 4;
+
+function mondayOf(d){
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = x.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  x.setDate(x.getDate() + diff);
+  return x;
+}
+function addDays(d, n){
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() + n);
+  return x;
+}
+function mdLabel(d){ return `${d.getMonth()+1}/${d.getDate()}`; }
+
+let coffeeCalStart = mondayOf(new Date());
+
+function coffeeEntriesFor(dateStr, loc){
+  return coffeeCalEntries.filter(e => e.date === dateStr && e.loc === loc);
+}
+function renderCoffeeCell(dateStr, loc){
+  const entries = coffeeEntriesFor(dateStr, loc);
+  if (entries.some(e => e.noService)) return `<div class="cc-noservice">제공없음</div>`;
+  if (!entries.length) return `<div class="cc-empty">+ 입력</div>`;
+  return entries.map(e => {
+    if (loc === 'production'){
+      return `<div class="cc-entry">${e.item}</div>`;
+    }
+    const sizeTxt = e.size ? ` ${e.size}` : '';
+    const qtyTxt = (Number(e.qty) > 1) ? ` ×${e.qty}` : '';
+    const batchTxt = e.batch ? `<div class="cc-batch">제조일자 ${e.batch}</div>` : '';
+    return `<div class="cc-entry">${e.item}${sizeTxt}${qtyTxt}</div>${batchTxt}`;
+  }).join('');
+}
+function ccFormatRangeLabel(start, weeksCount){
+  const end = addDays(start, weeksCount*7 - 1);
+  const f = (d) => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  return `${f(start)} ~ ${f(end)}`;
+}
+function renderCoffeeTab(){
+  const table = document.getElementById('coffeeCalTable');
+  if (!table) return;
+  const thead = `<thead><tr>
+      <th class="cc-label-col"></th>
+      ${CC_WEEKDAYS.map((w,i)=>`<th class="${i===5?'cc-sat':i===6?'cc-sun':''}">${w}</th>`).join('')}
+    </tr></thead>`;
+  let rows = '';
+  for (let w = 0; w < CC_WEEKS_SHOWN; w++){
+    const weekStart = addDays(coffeeCalStart, w*7);
+    const days = Array.from({length:7}, (_,i) => addDays(weekStart, i));
+    rows += `<tr class="cc-date-row">
+      <td class="cc-label-col"></td>
+      ${days.map((d,i)=>`<td class="${i===5?'cc-sat':i===6?'cc-sun':''}">${mdLabel(d)}</td>`).join('')}
+    </tr>`;
+    rows += `<tr class="cc-row">
+      <td class="cc-label-col">직원식당</td>
+      ${days.map(d => `<td class="cc-cell" data-date="${localYMD(d)}" data-loc="canteen">${renderCoffeeCell(localYMD(d),'canteen')}</td>`).join('')}
+    </tr>`;
+    rows += `<tr class="cc-row">
+      <td class="cc-label-col">생산부 휴게실</td>
+      ${days.map(d => `<td class="cc-cell" data-date="${localYMD(d)}" data-loc="production">${renderCoffeeCell(localYMD(d),'production')}</td>`).join('')}
+    </tr>`;
+  }
+  table.innerHTML = thead + '<tbody>' + rows + '</tbody>';
+  const rangeLabel = document.getElementById('ccRangeLabel');
+  if (rangeLabel) rangeLabel.textContent = ccFormatRangeLabel(coffeeCalStart, CC_WEEKS_SHOWN);
+}
+
+document.getElementById('coffeeCalTable').addEventListener('click', (evt) => {
+  const cell = evt.target.closest('.cc-cell');
+  if (!cell) return;
+  openCoffeeModal(cell.dataset.date, cell.dataset.loc);
+});
+document.getElementById('ccPrev').addEventListener('click', () => { coffeeCalStart = addDays(coffeeCalStart, -7*CC_WEEKS_SHOWN); renderCoffeeTab(); });
+document.getElementById('ccNext').addEventListener('click', () => { coffeeCalStart = addDays(coffeeCalStart, 7*CC_WEEKS_SHOWN); renderCoffeeTab(); });
+document.getElementById('ccToday').addEventListener('click', () => { coffeeCalStart = mondayOf(new Date()); renderCoffeeTab(); });
+
+/* ---- 입력 모달 ---- */
+let ccModalDate = null, ccModalLoc = null, ccModalRows = [];
+function toggleCoffeeModalRowsVisibility(){
+  const noService = document.getElementById('coffeeNoServiceCk').checked;
+  document.getElementById('coffeeModalRows').style.display = noService ? 'none' : '';
+  document.getElementById('coffeeAddRowBtn').style.display = noService ? 'none' : '';
+}
+function renderCoffeeModalRows(){
+  const wrap = document.getElementById('coffeeModalRows');
+  wrap.innerHTML = ccModalRows.map((row, idx) => {
+    if (ccModalLoc === 'production'){
+      return `<div class="cc-row-fields" data-idx="${idx}">
+        <div class="field" style="flex:1 1 220px;">
+          <label>품목(원두명)</label>
+          <input type="text" class="cc-f-item" list="itemList" value="${row.item||''}" placeholder="품목명 입력">
+        </div>
+        ${ccModalRows.length > 1 ? `<button type="button" class="row-btn danger cc-del-btn">삭제</button>` : ''}
+      </div>`;
+    }
+    return `<div class="cc-row-fields" data-idx="${idx}">
+      <div class="field" style="flex:2 1 160px;">
+        <label>품목(원두명)</label>
+        <input type="text" class="cc-f-item" list="itemList" value="${row.item||''}" placeholder="품목명 입력">
+      </div>
+      <div class="field" style="flex:1 1 90px;">
+        <label>중량</label>
+        <input type="text" class="cc-f-size" list="ccSizeList" value="${row.size||''}" placeholder="예: 200g">
+      </div>
+      <div class="field" style="flex:1 1 70px;">
+        <label>수량</label>
+        <input type="number" class="cc-f-qty" min="1" step="1" value="${row.qty||1}">
+      </div>
+      <div class="field" style="flex:1 1 110px;">
+        <label>제조일자</label>
+        <input type="text" class="cc-f-batch" value="${row.batch||''}" placeholder="예: 10/15">
+      </div>
+      ${ccModalRows.length > 1 ? `<button type="button" class="row-btn danger cc-del-btn">삭제</button>` : ''}
+    </div>`;
+  }).join('');
+}
+function openCoffeeModal(dateStr, loc){
+  ccModalDate = dateStr; ccModalLoc = loc;
+  const d = new Date(dateStr + 'T00:00:00');
+  const wd = CC_WEEKDAYS[(d.getDay()+6)%7];
+  document.getElementById('coffeeModalTitle').textContent =
+    `${d.getMonth()+1}/${d.getDate()} (${wd}) · ${loc==='canteen' ? '직원식당' : '생산부 휴게실'}`;
+  const entries = coffeeEntriesFor(dateStr, loc);
+  const existingNoService = entries.some(e => e.noService);
+  ccModalRows = existingNoService ? [] : entries.map(e => ({id:e.id, item:e.item, size:e.size, qty:e.qty||1, batch:e.batch}));
+  if (!existingNoService && ccModalRows.length === 0) ccModalRows.push({item:'', size:'', qty:1, batch:''});
+  document.getElementById('coffeeNoServiceWrap').style.display = loc === 'canteen' ? '' : 'none';
+  document.getElementById('coffeeNoServiceCk').checked = existingNoService;
+  document.getElementById('coffeeModalMsg').textContent = '';
+  document.getElementById('coffeeModalMsg').className = 'form-msg';
+  renderCoffeeModalRows();
+  toggleCoffeeModalRowsVisibility();
+  document.getElementById('coffeeModalOverlay').classList.add('open');
+}
+function closeCoffeeModal(){
+  document.getElementById('coffeeModalOverlay').classList.remove('open');
+}
+async function saveCoffeeModal(){
+  const msg = document.getElementById('coffeeModalMsg');
+  msg.textContent=''; msg.className='form-msg';
+  const noService = document.getElementById('coffeeNoServiceCk').checked;
+  const saveBtn = document.getElementById('coffeeModalSave');
+  saveBtn.disabled = true; saveBtn.textContent = '저장 중…';
+  try{
+    const original = coffeeEntriesFor(ccModalDate, ccModalLoc);
+    const originalIds = original.map(e => e.id);
+    const keepIds = new Set();
+    const toUpsert = [];
+    if (noService){
+      const existingNoService = original.find(e => e.noService);
+      if (existingNoService){
+        keepIds.add(existingNoService.id);
+      } else {
+        toUpsert.push({date:ccModalDate, loc:ccModalLoc, noService:true, item:'', size:'', qty:1, batch:''});
+      }
+    } else {
+      ccModalRows.forEach(row => {
+        const item = (row.item||'').trim();
+        if (!item) return;
+        const rec = {
+          date: ccModalDate, loc: ccModalLoc, noService:false, item,
+          size: ccModalLoc==='canteen' ? (row.size||'').trim() : '',
+          qty: ccModalLoc==='canteen' ? (Number(row.qty)||1) : 1,
+          batch: ccModalLoc==='canteen' ? (row.batch||'').trim() : '',
+        };
+        if (row.id){ rec.id = row.id; keepIds.add(row.id); }
+        toUpsert.push(rec);
+      });
+    }
+    const toDelete = originalIds.filter(id => !keepIds.has(id));
+
+    if (usingSheetSync){
+      for (const id of toDelete){ await postToSheet({target:'cal', action:'delete', id}); }
+      for (const rec of toUpsert){
+        await postToSheet({target:'cal', action: rec.id ? 'set' : 'add', entry: rec});
+      }
+      await fetchRecordsFromSheet(false);
+    } else {
+      coffeeCalEntries = coffeeCalEntries.filter(e => !toDelete.includes(e.id));
+      toUpsert.forEach(rec => {
+        if (rec.id){
+          const idx = coffeeCalEntries.findIndex(e => e.id === rec.id);
+          if (idx >= 0) coffeeCalEntries[idx] = {...rec};
+        } else {
+          coffeeCalEntries.push({...rec, id:'local-cc-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)});
+        }
+      });
+      renderCoffeeTab();
+    }
+    closeCoffeeModal();
+  } catch(e){
+    console.error(e);
+    msg.textContent = (e && e.message) ? e.message : '저장에 실패했습니다. 다시 시도해주세요.';
+    msg.className = 'form-msg err';
+  } finally {
+    saveBtn.disabled = false; saveBtn.textContent = '저장';
+  }
+}
+document.getElementById('coffeeModalRows').addEventListener('input', (evt) => {
+  const rowDiv = evt.target.closest('.cc-row-fields');
+  if (!rowDiv) return;
+  const idx = Number(rowDiv.dataset.idx);
+  if (!ccModalRows[idx]) return;
+  if (evt.target.classList.contains('cc-f-item')) ccModalRows[idx].item = evt.target.value;
+  else if (evt.target.classList.contains('cc-f-size')) ccModalRows[idx].size = evt.target.value;
+  else if (evt.target.classList.contains('cc-f-qty')) ccModalRows[idx].qty = evt.target.value;
+  else if (evt.target.classList.contains('cc-f-batch')) ccModalRows[idx].batch = evt.target.value;
+});
+document.getElementById('coffeeModalRows').addEventListener('click', (evt) => {
+  const btn = evt.target.closest('.cc-del-btn');
+  if (!btn) return;
+  const idx = Number(btn.closest('.cc-row-fields').dataset.idx);
+  ccModalRows.splice(idx, 1);
+  renderCoffeeModalRows();
+});
+document.getElementById('coffeeAddRowBtn').addEventListener('click', () => {
+  ccModalRows.push({item:'', size:'', qty:1, batch:''});
+  renderCoffeeModalRows();
+});
+document.getElementById('coffeeNoServiceCk').addEventListener('change', toggleCoffeeModalRowsVisibility);
+document.getElementById('coffeeModalClose').addEventListener('click', closeCoffeeModal);
+document.getElementById('coffeeModalCancel').addEventListener('click', closeCoffeeModal);
+document.getElementById('coffeeModalOverlay').addEventListener('click', (evt) => { if (evt.target.id === 'coffeeModalOverlay') closeCoffeeModal(); });
+document.getElementById('coffeeModalSave').addEventListener('click', saveCoffeeModal);
+
 /* ---------------- SHEET SYNC (Google Apps Script 웹 앱) ---------------- */
 /* 구글 시트를 데이터 저장소로 쓰는 실시간(폴링) 동기화. claude.ai 로그인 없이
    누구나 이 링크만 열면 보고/입력할 수 있도록, Claude 전용 db capability 대신
@@ -1456,8 +1768,18 @@ async function fetchRecordsFromSheet(isFirstLoad){
     usingSheetSync = true;
     setSyncBadge('live');
     records = (data.records || []).map(r => ({...r, date: normDate(r.date), batch: (r.batch==null?'':String(r.batch)), size: (r.size==null?'':String(r.size)), qty: Number(r.qty)||0}));
+    coffeeCalEntries = (data.calEntries || []).map(e => ({
+      ...e,
+      date: normDate(e.date),
+      item: e.item || '',
+      size: e.size || '',
+      batch: e.batch==null ? '' : String(e.batch),
+      qty: Number(e.qty) || 1,
+      noService: e.noService === true || e.noService === 'TRUE' || e.noService === 'true' || e.noService === 1,
+    }));
     renderDashboard();
     renderDetail();
+    renderCoffeeTab();
   } catch(e){
     console.error('sheet fetch error', e);
     if (isFirstLoad) setSyncBadge('local');
@@ -2173,6 +2495,7 @@ function applyNavState(state){
 
   renderDashboard();
   renderDetail({refreshForm:true});
+  renderCoffeeTab();
   fitTableWraps(true);
 }
 function navigateTo(partial){
@@ -2231,6 +2554,7 @@ document.getElementById('tblStock').addEventListener('click', (evt) => {
 
 renderDashboard();
 renderDetail({refreshForm:true});
+renderCoffeeTab();
 initDb();
 /* 맨 처음 불러온 화면을 히스토리의 기준점으로 남겨둡니다. 이게 있어야
    탭을 몇 번 옮겨 다니다가 뒤로가기를 계속 눌렀을 때 결국 이 최초 화면으로

@@ -26,6 +26,7 @@
   --accent:#93502C;
   --accent-ink:#FFFFFF;
   --accent-soft:#F1DFC7;
+  --prod-soft:#E3EFFB;
   --chart-surface:#fcfcfb;
   --grid:#e1e0d9;
   --baseline:#c3c2b7;
@@ -54,6 +55,7 @@
     --accent:#E0996A;
     --accent-ink:#1A1208;
     --accent-soft:#3C2C1C;
+    --prod-soft:#16293B;
     --chart-surface:#1a1a19;
     --grid:#2c2c2a;
     --baseline:#383835;
@@ -82,6 +84,7 @@
   --accent:#E0996A;
   --accent-ink:#1A1208;
   --accent-soft:#3C2C1C;
+  --prod-soft:#16293B;
   --chart-surface:#1a1a19;
   --grid:#2c2c2a;
   --baseline:#383835;
@@ -348,19 +351,24 @@ th.sortable .sort-arrow{margin-left:4px; opacity:.7;}
 .coffee-hint{margin-top:10px; font-size:11.5px; color:var(--ink-muted);}
 table.coffee-cal-table{width:100%; border-collapse:separate; border-spacing:0 6px; min-width:860px; font-size:12.5px;}
 .coffee-cal-table thead th{position:static; background:transparent; border-bottom:none; padding:4px 8px; text-align:center; font-size:12px; color:var(--ink-2); text-transform:none;}
-.coffee-cal-table th.cc-label-col, .coffee-cal-table td.cc-label-col{width:92px; min-width:92px; white-space:normal;}
+.coffee-cal-table th.cc-label-col, .coffee-cal-table td.cc-label-col{width:92px; min-width:92px; white-space:normal; text-align:center;}
 .coffee-cal-table th.cc-sat{color:var(--series-1);}
-.coffee-cal-table th.cc-sun{color:#c0392b;}
+.coffee-cal-table th.cc-sun, .coffee-cal-table th.cc-holiday{color:#c0392b;}
 tr.cc-date-row td{background:var(--surface-2); border:1px solid var(--border); border-right:none; border-bottom:none; font-weight:800; text-align:center; padding:6px 4px;}
 tr.cc-date-row td:last-child{border-right:1px solid var(--border);}
 tr.cc-date-row td.cc-label-col{background:transparent; border:none;}
 tr.cc-date-row td.cc-sat{color:var(--series-1);}
-tr.cc-date-row td.cc-sun{color:#c0392b;}
+tr.cc-date-row td.cc-sun, tr.cc-date-row td.cc-holiday{color:#c0392b;}
 tr.cc-row td{border:1px solid var(--border); border-right:none; border-top:none; vertical-align:top; padding:0;}
 tr.cc-row td:last-child{border-right:1px solid var(--border);}
 tr.cc-row:last-of-type td{border-bottom:1px solid var(--border);}
 tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; color:var(--ink-2); font-size:11.5px; padding:8px 8px 8px 2px; vertical-align:middle;}
-.cc-cell{min-height:52px; padding:6px 7px; cursor:pointer; background:var(--surface); white-space:normal;}
+/* 직원식당/생산부 휴게실 두 줄이 한눈에 구분되도록, 각각 다른 옅은 색을 깔아둡니다. */
+tr.cc-row-canteen td.cc-cell{background:var(--accent-soft);}
+tr.cc-row-production td.cc-cell{background:var(--prod-soft);}
+tr.cc-row-canteen td.cc-cell:hover{background:color-mix(in srgb, var(--accent-soft) 60%, var(--surface-2));}
+tr.cc-row-production td.cc-cell:hover{background:color-mix(in srgb, var(--prod-soft) 60%, var(--surface-2));}
+.cc-cell{min-height:52px; padding:6px 7px; cursor:pointer; background:var(--surface); white-space:normal; text-align:center;}
 .cc-cell:hover{background:var(--surface-2);}
 .cc-entry{font-weight:700; color:var(--ink); line-height:1.4;}
 .cc-batch{font-size:10.5px; color:var(--ink-muted); line-height:1.4; margin-bottom:3px;}
@@ -1557,6 +1565,52 @@ function filteredBrewRecipes(term){
 }
 const CC_WEEKDAYS = ['월','화','수','목','금','토','일'];
 const CC_WEEKS_SHOWN = 4;
+/* 관공서 공휴일(+대체공휴일) 목록. 음력 기반(설날/추석/부처님오신날)이라 매년 날짜가 바뀌어서
+   하드코딩이 필요합니다. 한국천문연구원(astro.kasi.re.kr) 달력 데이터를 기준으로 작성했고,
+   공공기관이 쉬지 않는 근로자의 날(5/1)·제헌절(7/17)은 일부러 제외했습니다.
+   필요하면 이 목록에 연도를 더 추가하거나 날짜를 조정해 주세요. */
+const KR_HOLIDAYS = {
+  '2026-01-01': '신정',
+  '2026-02-16': '설날 연휴',
+  '2026-02-17': '설날',
+  '2026-02-18': '설날 연휴',
+  '2026-03-01': '삼일절',
+  '2026-03-02': '대체공휴일(삼일절)',
+  '2026-05-05': '어린이날',
+  '2026-05-24': '부처님오신날',
+  '2026-05-25': '대체공휴일(부처님오신날)',
+  '2026-06-03': '전국동시지방선거일',
+  '2026-06-06': '현충일',
+  '2026-08-15': '광복절',
+  '2026-08-17': '대체공휴일(광복절)',
+  '2026-09-24': '추석 연휴',
+  '2026-09-25': '추석',
+  '2026-09-26': '추석 연휴',
+  '2026-10-03': '개천절',
+  '2026-10-05': '대체공휴일(개천절)',
+  '2026-10-09': '한글날',
+  '2026-12-25': '성탄절',
+  '2027-01-01': '신정',
+  '2027-02-06': '설날 연휴',
+  '2027-02-07': '설날',
+  '2027-02-08': '설날 연휴',
+  '2027-02-09': '대체공휴일(설날)',
+  '2027-03-01': '삼일절',
+  '2027-05-05': '어린이날',
+  '2027-05-13': '부처님오신날',
+  '2027-06-06': '현충일',
+  '2027-08-15': '광복절',
+  '2027-08-16': '대체공휴일(광복절)',
+  '2027-09-14': '추석 연휴',
+  '2027-09-15': '추석',
+  '2027-09-16': '추석 연휴',
+  '2027-10-03': '개천절',
+  '2027-10-04': '대체공휴일(개천절)',
+  '2027-10-09': '한글날',
+  '2027-10-11': '대체공휴일(한글날)',
+  '2027-12-25': '성탄절',
+  '2027-12-27': '대체공휴일(성탄절)',
+};
 
 function mondayOf(d){
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -1611,13 +1665,19 @@ function renderCoffeeTab(){
     const days = Array.from({length:7}, (_,i) => addDays(weekStart, i));
     rows += `<tr class="cc-date-row">
       <td class="cc-label-col"></td>
-      ${days.map((d,i)=>`<td class="${i===5?'cc-sat':i===6?'cc-sun':''}">${mdLabel(d)}</td>`).join('')}
+      ${days.map((d,i)=>{
+        const dStr = localYMD(d);
+        const holidayName = KR_HOLIDAYS[dStr];
+        const cls = holidayName ? 'cc-holiday' : (i===5?'cc-sat':i===6?'cc-sun':'');
+        const title = holidayName ? ` title="${holidayName}"` : '';
+        return `<td class="${cls}"${title}>${mdLabel(d)}</td>`;
+      }).join('')}
     </tr>`;
-    rows += `<tr class="cc-row">
+    rows += `<tr class="cc-row cc-row-canteen">
       <td class="cc-label-col">직원식당</td>
       ${days.map(d => `<td class="cc-cell" data-date="${localYMD(d)}" data-loc="canteen">${renderCoffeeCell(localYMD(d),'canteen')}</td>`).join('')}
     </tr>`;
-    rows += `<tr class="cc-row">
+    rows += `<tr class="cc-row cc-row-production">
       <td class="cc-label-col">생산부 휴게실</td>
       ${days.map(d => `<td class="cc-cell" data-date="${localYMD(d)}" data-loc="production">${renderCoffeeCell(localYMD(d),'production')}</td>`).join('')}
     </tr>`;
@@ -2433,7 +2493,10 @@ async function downloadLotReport(){
     const GRAY_FONT = {color:{argb:'FF999999'}};
     const SAT_FONT = {bold:true, color:{argb:'FF2A78D6'}};
     const SUN_FONT = {bold:true, color:{argb:'FFC0392B'}};
+    const HOLIDAY_FONT = {bold:true, color:{argb:'FFC0392B'}};
     const WEEK_HEADER_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF2F2F2'}};
+    const CANTEEN_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF1DFC7'}};
+    const PROD_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFE3EFFB'}};
 
     let r4 = 4;
     const headRow4 = ws4.getRow(r4);
@@ -2455,6 +2518,7 @@ async function downloadLotReport(){
         cell.numFmt = 'm/d';
         cell.alignment = {horizontal:'center'};
         if (dStr < calTodayStr) cell.font = {bold:true, color:GRAY_FONT.color};
+        else if (KR_HOLIDAYS[dStr]) cell.font = HOLIDAY_FONT;
         else if (i === 5) cell.font = SAT_FONT;
         else if (i === 6) cell.font = SUN_FONT;
         else cell.font = {bold:true};
@@ -2465,6 +2529,7 @@ async function downloadLotReport(){
       const canteenRow = ws4.getRow(r4);
       canteenRow.getCell(1).value = '직원식당';
       canteenRow.getCell(1).font = {bold:true};
+      canteenRow.getCell(1).alignment = {horizontal:'center', vertical:'middle'};
       days.forEach((d,i) => {
         const dStr = localYMD(d);
         const entries = coffeeEntriesFor(dStr, 'canteen');
@@ -2480,16 +2545,17 @@ async function downloadLotReport(){
           }).join('\n');
         }
         cell.value = text;
-        cell.alignment = {wrapText:true, vertical:'top'};
+        cell.alignment = {wrapText:true, vertical:'middle', horizontal:'center'};
         if (dStr < calTodayStr) cell.font = GRAY_FONT;
       });
-      canteenRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
+      canteenRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; cell.fill = CANTEEN_FILL; });
       canteenRow.height = 34;
       r4++;
 
       const prodRow = ws4.getRow(r4);
       prodRow.getCell(1).value = '생산부 휴게실';
       prodRow.getCell(1).font = {bold:true};
+      prodRow.getCell(1).alignment = {horizontal:'center', vertical:'middle'};
       days.forEach((d,i) => {
         const dStr = localYMD(d);
         const entries = coffeeEntriesFor(dStr, 'production');
@@ -2498,10 +2564,10 @@ async function downloadLotReport(){
         if (entries.some(e => e.noService)) text = '제공없음';
         else if (entries.length) text = entries.map(e => e.item).join('\n');
         cell.value = text;
-        cell.alignment = {wrapText:true, vertical:'top'};
+        cell.alignment = {wrapText:true, vertical:'middle', horizontal:'center'};
         if (dStr < calTodayStr) cell.font = GRAY_FONT;
       });
-      prodRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
+      prodRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; cell.fill = PROD_FILL; });
       prodRow.height = 26;
       r4++;
     }

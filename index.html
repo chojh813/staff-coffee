@@ -1821,13 +1821,13 @@ async function saveCoffeeModal(){
       }
     } else {
       ccModalRows.forEach(row => {
-        const item = (row.item||'').trim();
+        const item = String(row.item||'').trim();
         if (!item) return;
         const rec = {
           date: ccModalDate, loc: ccModalLoc, noService:false, item,
-          size: ccModalLoc==='canteen' ? (row.size||'').trim() : '',
+          size: ccModalLoc==='canteen' ? String(row.size||'').trim() : '',
           qty: ccModalLoc==='canteen' ? (Number(row.qty)||1) : 1,
-          batch: ccModalLoc==='canteen' ? (row.batch||'').trim() : '',
+          batch: ccModalLoc==='canteen' ? String(row.batch||'').trim() : '',
         };
         if (row.id){ rec.id = row.id; keepIds.add(row.id); }
         toUpsert.push(rec);
@@ -1842,7 +1842,7 @@ async function saveCoffeeModal(){
     const recipeToDelete = [];
     if (ccModalLoc === 'canteen'){
       ccModalRows.forEach(row => {
-        const item = (row.item||'').trim();
+        const item = String(row.item||'').trim();
         const entryKept = !noService && !!item;
         const r = row.recipe || {};
         const weight = (r.weight||'').toString().trim();
@@ -2061,8 +2061,8 @@ async function fetchRecordsFromSheet(isFirstLoad){
     coffeeCalEntries = (data.calEntries || []).map(e => ({
       ...e,
       date: normDate(e.date),
-      item: e.item || '',
-      size: e.size || '',
+      item: e.item==null ? '' : String(e.item),
+      size: e.size==null ? '' : String(e.size),
       batch: e.batch==null ? '' : String(e.batch),
       qty: Number(e.qty) || 1,
       noService: e.noService === true || e.noService === 'TRUE' || e.noService === 'true' || e.noService === 1,

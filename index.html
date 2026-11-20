@@ -371,6 +371,7 @@ tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; 
 .modal-overlay{display:none; position:fixed; inset:0; background:rgba(20,14,8,.45); z-index:100; align-items:center; justify-content:center; padding:16px;}
 .modal-overlay.open{display:flex;}
 .modal-card{background:var(--surface); border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow); padding:20px 22px; width:100%; max-width:480px; max-height:88vh; overflow:auto;}
+#recipePickerOverlay .modal-card{max-width:680px;}
 .modal-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
 .modal-head h3{margin:0; font-size:15.5px; font-weight:800;}
 .modal-close{appearance:none; border:none; background:transparent; cursor:pointer; font-size:20px; line-height:1; color:var(--ink-muted); padding:2px 6px;}
@@ -384,8 +385,19 @@ tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; 
 .cc-recipe-block{margin-top:10px; padding-top:9px; border-top:1px dotted var(--border);}
 .cc-recipe-label{display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:10.5px; font-weight:800; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px;}
 .cc-recipe-hint{font-weight:600; text-transform:none; letter-spacing:0; color:var(--ink-muted);}
-.cc-load-recipe-select{font:inherit; font-size:10.5px; font-weight:800; text-transform:none; letter-spacing:0; color:var(--accent); background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:3px 6px; cursor:pointer; max-width:220px;}
-.cc-load-recipe-select:hover{border-color:var(--accent);}
+.cc-pick-recipe-btn{appearance:none; cursor:pointer; padding:5px 11px; border-radius:7px; background:transparent; border:1px solid var(--border); color:var(--accent); font:inherit; font-size:10.5px; font-weight:800; text-transform:none; letter-spacing:0;}
+.cc-pick-recipe-btn:hover{background:var(--accent-soft);}
+.cc-recipe-flag{font-size:11px; font-weight:800; color:var(--accent); margin-left:2px;}
+#brewSearchBox, #recipePickerSearch{
+  font:inherit; font-size:13.5px; padding:9px 14px; border-radius:9px;
+  border:1px solid var(--border); background:var(--surface); color:var(--ink);
+}
+#brewSearchBox{min-width:220px; flex:0 1 280px;}
+#recipePickerSearch{width:100%;}
+#brewSearchBox::placeholder, #recipePickerSearch::placeholder{color:var(--ink-muted);}
+#brewSearchBox:focus, #recipePickerSearch:focus{outline:2px solid var(--accent); outline-offset:1px;}
+tr.recipe-pick-row{cursor:pointer;}
+tr.recipe-pick-row:hover td{background:var(--surface-2);}
 
 @media (max-width:640px){
   .brand h1{font-size:16.5px;}
@@ -408,6 +420,7 @@ tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; 
         <button class="tab-btn active" data-tab="dashboard" type="button">대시보드</button>
         <button class="tab-btn" data-tab="detail" type="button">상세 데이터</button>
         <button class="tab-btn" data-tab="coffee" type="button">오늘의 커피</button>
+        <button class="tab-btn" data-tab="brew" type="button">브루잉 레시피</button>
       </nav>
       <button type="button" class="btn-export" id="btnExportExcel" title="원두·2차가공품의 입출고 기록·잔여재고(전체/재고있음만)·사용량 요약을 엑셀 파일로 내려받습니다">
         <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 1.5v8.25M8 9.75 5 6.75M8 9.75l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 11v1.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -565,6 +578,14 @@ tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; 
       </div>
       <p class="coffee-hint">칸을 클릭하면 그 날의 원두를 입력·수정할 수 있어요. 직원식당은 품목·중량·수량·제조일자를, 생산부 휴게실은 품목명만 입력합니다.</p>
     </section>
+
+    <section id="tab-brew" class="tabpanel">
+      <div class="toolbar">
+        <input type="search" id="brewSearchBox" placeholder="원두명으로 검색...">
+      </div>
+      <div class="table-wrap" id="tblBrewWrap"></div>
+      <p class="coffee-hint">원두별로 저장해둔 배치브루 레시피 목록이에요. "오늘의 커피" 캘린더의 직원식당 칸에서 레시피를 입력하면 여기에도 바로 나타나고, 반대로 입력 칸에서 "레시피 목록에서 선택"을 누르면 여기와 같은 목록에서 골라서 불러올 수 있어요.</p>
+    </section>
   </main>
 
   <footer class="foot">
@@ -591,6 +612,17 @@ tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; 
       <button type="button" class="btn-ghost" id="coffeeModalCancel">취소</button>
       <span class="form-msg" id="coffeeModalMsg"></span>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="recipePickerOverlay" style="z-index:110;">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>레시피 목록에서 선택</h3>
+      <button type="button" class="modal-close" id="recipePickerClose" aria-label="닫기">×</button>
+    </div>
+    <input type="search" id="recipePickerSearch" placeholder="원두명으로 검색...">
+    <div class="table-wrap" id="recipePickerListWrap" style="margin-top:10px; max-height:320px;"></div>
   </div>
 </div>
 
@@ -1518,18 +1550,13 @@ let brewRecipes = []; // {id, date:'YYYY-MM-DD', item, weight, water, grind, ice
 function brewRecipeFor(date, item){
   return brewRecipes.find(r => r.date === date && r.item === item);
 }
-/* 같은 원두로 저장된 레시피 중, 값이 실제로 채워져 있는 것만 최신 날짜순으로 모읍니다.
-   "레시피 불러오기" 드롭다운에서 날짜별로 골라서 쓸 수 있게 해줍니다. */
-function brewRecipesForItem(item){
-  return brewRecipes.filter(r => r.item === item && (r.weight || r.water || r.grind || r.ice))
-    .slice().sort((a,b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-}
-function recipeOptionsHtml(item){
-  const matches = item ? brewRecipesForItem(item) : [];
-  if (!matches.length) return `<option value="">저장된 레시피 없음</option>`;
-  return `<option value="">레시피 불러오기 ▾</option>` + matches.map(r =>
-    `<option value="${r.id}">${r.date} · ${r.weight||'-'}g · ${r.water||'-'}ml · 분쇄 ${r.grind||'-'} · 얼음 ${r.ice||'-'}%</option>`
-  ).join('');
+/* 저장된 레시피 목록을 품목명(검색어) 기준으로 걸러서, 원두명 오름차순 → 같은 원두는
+   최신 날짜순으로 정렬합니다. "브루잉 레시피" 탭 목록과, 캘린더 입력창의 "레시피
+   목록에서 선택" 팝업이 똑같은 이 목록을 그대로 재사용합니다. */
+function filteredBrewRecipes(term){
+  const t = (term||'').trim().toLowerCase();
+  return brewRecipes.filter(r => !t || r.item.toLowerCase().includes(t))
+    .slice().sort((a,b) => a.item.localeCompare(b.item,'ko') || (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 }
 const CC_WEEKDAYS = ['월','화','수','목','금','토','일'];
 const CC_WEEKS_SHOWN = 4;
@@ -1563,8 +1590,10 @@ function renderCoffeeCell(dateStr, loc){
     }
     const sizeTxt = e.size ? ` ${e.size}` : '';
     const qtyTxt = (Number(e.qty) > 1) ? ` ×${e.qty}` : '';
+    const hasRecipe = !!brewRecipeFor(dateStr, e.item);
+    const flagTxt = hasRecipe ? ` <span class="cc-recipe-flag" title="배치브루 레시피 등록됨">Ⓡ</span>` : '';
     const batchTxt = e.batch ? `<div class="cc-batch">제조일자 ${e.batch}</div>` : '';
-    return `<div class="cc-entry">${e.item}${sizeTxt}${qtyTxt}</div>${batchTxt}`;
+    return `<div class="cc-entry">${e.item}${flagTxt}${sizeTxt}${qtyTxt}</div>${batchTxt}`;
   }).join('');
 }
 function ccFormatRangeLabel(start, weeksCount){
@@ -1654,7 +1683,7 @@ function renderCoffeeModalRows(){
       </div>
       <div class="cc-recipe-block">
         <div class="cc-recipe-label">배치브루 레시피 <span class="cc-recipe-hint">(캘린더 화면에는 표시되지 않아요)</span>
-          <select class="cc-load-recipe-select">${recipeOptionsHtml(row.item||'')}</select>
+          <button type="button" class="cc-pick-recipe-btn">레시피 목록에서 선택</button>
         </div>
         <div class="cc-row-fields">
           <div class="field" style="flex:1 1 90px;">
@@ -1821,36 +1850,103 @@ document.getElementById('coffeeModalRows').addEventListener('input', (evt) => {
   else if (evt.target.classList.contains('cc-f-rice')) { row.recipe = row.recipe || {}; row.recipe.ice = evt.target.value; }
 });
 document.getElementById('coffeeModalRows').addEventListener('click', (evt) => {
+  const pickBtn = evt.target.closest('.cc-pick-recipe-btn');
+  if (pickBtn){
+    const idx = Number(pickBtn.closest('.cc-row-wrap').dataset.idx);
+    const row = ccModalRows[idx];
+    if (!row) return;
+    openRecipePicker(idx, (row.item||'').trim());
+    return;
+  }
   const btn = evt.target.closest('.cc-del-btn');
   if (!btn) return;
   const idx = Number(btn.closest('.cc-row-wrap').dataset.idx);
   ccModalRows.splice(idx, 1);
   renderCoffeeModalRows();
 });
-/* 드롭다운을 열기 직전(mousedown)에, 그 줄에 지금 입력돼 있는 품목명 기준으로
-   선택지를 새로 채워둡니다 — 렌더링 이후에 품목명을 바꿔도 최신 목록이 보이도록. */
-document.getElementById('coffeeModalRows').addEventListener('mousedown', (evt) => {
-  const sel = evt.target.closest('.cc-load-recipe-select');
-  if (!sel) return;
-  const idx = Number(sel.closest('.cc-row-wrap').dataset.idx);
-  const row = ccModalRows[idx];
+
+/* ---- 레시피 목록(「브루잉 레시피」 탭과, 입력창의 "레시피 목록에서 선택" 팝업이
+   똑같은 filteredBrewRecipes()/행 렌더링을 재사용합니다) ---- */
+let brewSearchTerm = '';
+let recipePickerRowIdx = null;
+
+function brewTableRowsHtml(list, mode){
+  if (!list.length){
+    return `<table><tbody><tr class="empty-row"><td>${mode==='pick' ? '검색 결과가 없습니다.' : '저장된 레시피가 없습니다.'}</td></tr></tbody></table>`;
+  }
+  const extraCol = mode === 'browse' ? '<th></th>' : '';
+  return `<table>
+    <thead><tr><th>원두명</th><th>날짜</th><th class="num">중량(g)</th><th class="num">물의 양(ml)</th><th class="num">분쇄도</th><th class="num">얼음량(%)</th>${extraCol}</tr></thead>
+    <tbody>${list.map(r => {
+      const cells = `<td>${r.item}</td><td>${r.date}</td><td class="num">${r.weight||'-'}</td><td class="num">${r.water||'-'}</td><td class="num">${r.grind||'-'}</td><td class="num">${r.ice||'-'}</td>`;
+      if (mode === 'pick'){
+        return `<tr class="recipe-pick-row" data-id="${r.id}">${cells}</tr>`;
+      }
+      return `<tr>${cells}<td><div class="row-actions"><button type="button" class="row-btn danger" data-action="delete-brew" data-id="${r.id}">삭제</button></div></td></tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+function renderBrewTable(){
+  const wrap = document.getElementById('tblBrewWrap');
+  if (!wrap) return;
+  wrap.innerHTML = brewTableRowsHtml(filteredBrewRecipes(brewSearchTerm), 'browse');
+}
+function renderRecipePickerList(){
+  const wrap = document.getElementById('recipePickerListWrap');
+  if (!wrap) return;
+  const term = document.getElementById('recipePickerSearch').value;
+  wrap.innerHTML = brewTableRowsHtml(filteredBrewRecipes(term), 'pick');
+}
+function openRecipePicker(idx, presetItem){
+  recipePickerRowIdx = idx;
+  document.getElementById('recipePickerSearch').value = presetItem || '';
+  renderRecipePickerList();
+  document.getElementById('recipePickerOverlay').classList.add('open');
+}
+function closeRecipePicker(){
+  document.getElementById('recipePickerOverlay').classList.remove('open');
+  recipePickerRowIdx = null;
+}
+document.getElementById('brewSearchBox').addEventListener('input', (evt) => {
+  brewSearchTerm = evt.target.value;
+  renderBrewTable();
+});
+document.getElementById('tblBrewWrap').addEventListener('click', async (evt) => {
+  const btn = evt.target.closest('[data-action="delete-brew"]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const rec = brewRecipes.find(r => r.id === id);
+  if (!rec) return;
+  if (!window.confirm(`다음 레시피를 삭제할까요?\n\n${rec.item} · ${rec.date}\n\n삭제하면 되돌릴 수 없습니다.`)) return;
+  try{
+    if (usingSheetSync){
+      await postToSheet({target:'brew', action:'delete', id});
+      await fetchRecordsFromSheet(false);
+    } else {
+      brewRecipes = brewRecipes.filter(r => r.id !== id);
+      renderBrewTable();
+    }
+  } catch(e){
+    console.error(e);
+    window.alert((e && e.message) ? e.message : '삭제에 실패했습니다. 다시 시도해주세요.');
+  }
+});
+document.getElementById('recipePickerSearch').addEventListener('input', renderRecipePickerList);
+document.getElementById('recipePickerClose').addEventListener('click', closeRecipePicker);
+document.getElementById('recipePickerOverlay').addEventListener('click', (evt) => {
+  if (evt.target.id === 'recipePickerOverlay'){ closeRecipePicker(); return; }
+  const row = evt.target.closest('.recipe-pick-row');
   if (!row) return;
-  sel.innerHTML = recipeOptionsHtml((row.item||'').trim());
+  const picked = brewRecipes.find(r => r.id === row.dataset.id);
+  if (picked && recipePickerRowIdx != null && ccModalRows[recipePickerRowIdx]){
+    ccModalRows[recipePickerRowIdx].recipe = {weight: picked.weight, water: picked.water, grind: picked.grind, ice: picked.ice};
+    document.getElementById('coffeeModalMsg').textContent = `${picked.date}에 저장한 "${picked.item}" 레시피를 불러왔습니다.`;
+    document.getElementById('coffeeModalMsg').className = 'form-msg ok';
+    renderCoffeeModalRows();
+  }
+  closeRecipePicker();
 });
-document.getElementById('coffeeModalRows').addEventListener('change', (evt) => {
-  const sel = evt.target.closest('.cc-load-recipe-select');
-  if (!sel) return;
-  const id = sel.value;
-  if (!id) return;
-  const idx = Number(sel.closest('.cc-row-wrap').dataset.idx);
-  const row = ccModalRows[idx];
-  const picked = brewRecipes.find(r => r.id === id);
-  if (!row || !picked) return;
-  row.recipe = {weight: picked.weight, water: picked.water, grind: picked.grind, ice: picked.ice};
-  document.getElementById('coffeeModalMsg').textContent = `${picked.date}에 저장한 레시피를 불러왔습니다.`;
-  document.getElementById('coffeeModalMsg').className = 'form-msg ok';
-  renderCoffeeModalRows();
-});
+
 document.getElementById('coffeeAddRowBtn').addEventListener('click', () => {
   ccModalRows.push({item:'', size:'', qty:1, batch:'', recipeId:null, recipe:{weight:'',water:'',grind:'',ice:''}});
   renderCoffeeModalRows();
@@ -1917,6 +2013,7 @@ async function fetchRecordsFromSheet(isFirstLoad){
     renderDashboard();
     renderDetail();
     renderCoffeeTab();
+    renderBrewTable();
   } catch(e){
     console.error('sheet fetch error', e);
     if (isFirstLoad) setSyncBadge('local');
@@ -2633,6 +2730,7 @@ function applyNavState(state){
   renderDashboard();
   renderDetail({refreshForm:true});
   renderCoffeeTab();
+  renderBrewTable();
   fitTableWraps(true);
 }
 function navigateTo(partial){
@@ -2692,6 +2790,7 @@ document.getElementById('tblStock').addEventListener('click', (evt) => {
 renderDashboard();
 renderDetail({refreshForm:true});
 renderCoffeeTab();
+renderBrewTable();
 initDb();
 /* 맨 처음 불러온 화면을 히스토리의 기준점으로 남겨둡니다. 이게 있어야
    탭을 몇 번 옮겨 다니다가 뒤로가기를 계속 눌렀을 때 결국 이 최초 화면으로

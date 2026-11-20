@@ -27,6 +27,8 @@
   --accent-ink:#FFFFFF;
   --accent-soft:#F1DFC7;
   --prod-soft:#E3EFFB;
+  --cal-line:#C9AD82;
+  --cal-line-soft:#EFE6D4;
   --chart-surface:#fcfcfb;
   --grid:#e1e0d9;
   --baseline:#c3c2b7;
@@ -56,6 +58,8 @@
     --accent-ink:#1A1208;
     --accent-soft:#3C2C1C;
     --prod-soft:#16293B;
+    --cal-line:#6B5438;
+    --cal-line-soft:#2E2518;
     --chart-surface:#1a1a19;
     --grid:#2c2c2a;
     --baseline:#383835;
@@ -85,6 +89,8 @@
   --accent-ink:#1A1208;
   --accent-soft:#3C2C1C;
   --prod-soft:#16293B;
+  --cal-line:#6B5438;
+  --cal-line-soft:#2E2518;
   --chart-surface:#1a1a19;
   --grid:#2c2c2a;
   --baseline:#383835;
@@ -354,22 +360,25 @@ table.coffee-cal-table{width:100%; border-collapse:separate; border-spacing:0 6p
 .coffee-cal-table th.cc-label-col, .coffee-cal-table td.cc-label-col{width:92px; min-width:92px; white-space:normal; text-align:center;}
 .coffee-cal-table th.cc-sat{color:var(--series-1);}
 .coffee-cal-table th.cc-sun, .coffee-cal-table th.cc-holiday{color:#c0392b;}
-tr.cc-date-row td{background:var(--surface-2); border:1px solid var(--border); border-right:none; border-bottom:none; font-weight:800; text-align:center; padding:6px 4px;}
-tr.cc-date-row td:last-child{border-right:1px solid var(--border);}
+tr.cc-date-row td{background:var(--surface-2); border:1px solid var(--cal-line); border-right:none; border-bottom:none; font-weight:800; text-align:center; padding:6px 4px;}
+tr.cc-date-row td:last-child{border-right:1px solid var(--cal-line);}
 tr.cc-date-row td.cc-label-col{background:transparent; border:none;}
 tr.cc-date-row td.cc-sat{color:var(--series-1);}
 tr.cc-date-row td.cc-sun, tr.cc-date-row td.cc-holiday{color:#c0392b;}
-tr.cc-row td{border:1px solid var(--border); border-right:none; border-top:none; vertical-align:top; padding:0;}
-tr.cc-row td:last-child{border-right:1px solid var(--border);}
-tr.cc-row:last-of-type td{border-bottom:1px solid var(--border);}
+/* 요일 칸을 구분짓는 세로줄은 선명하게, 식당→휴게실 사이 가로줄만 옅게 둬서
+   같은 날짜 안에 묶여 보이도록 합니다(배경색 대신 테두리 강약으로 구분). */
+tr.cc-row td{border:1px solid var(--cal-line); border-right:none; border-top:none; vertical-align:top; padding:0;}
+tr.cc-row td:last-child{border-right:1px solid var(--cal-line);}
+tr.cc-row-canteen td{border-bottom:1px solid var(--cal-line-soft);}
+tr.cc-row-production td{border-bottom:1px solid var(--cal-line);}
 tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; color:var(--ink-2); font-size:11.5px; padding:8px 8px 8px 2px; vertical-align:middle;}
-/* 직원식당/생산부 휴게실 두 줄이 한눈에 구분되도록, 각각 다른 옅은 색을 깔아둡니다. */
-tr.cc-row-canteen td.cc-cell{background:var(--accent-soft);}
-tr.cc-row-production td.cc-cell{background:var(--prod-soft);}
-tr.cc-row-canteen td.cc-cell:hover{background:color-mix(in srgb, var(--accent-soft) 60%, var(--surface-2));}
-tr.cc-row-production td.cc-cell:hover{background:color-mix(in srgb, var(--prod-soft) 60%, var(--surface-2));}
 .cc-cell{min-height:52px; padding:6px 7px; cursor:pointer; background:var(--surface); white-space:normal; text-align:center;}
 .cc-cell:hover{background:var(--surface-2);}
+/* 직원식당은 내용이 더 많아서(품목·중량·수량·제조일자) 휴게실보다 칸 간격을 1.5배로 넉넉하게 둡니다.
+   (tr.cc-row td{padding:0}이 .cc-cell의 기본 패딩보다 우선순위가 높아서, 두 줄 모두 여기서
+   명시적으로 다시 지정해야 실제로 적용됩니다.) */
+tr.cc-row-production td.cc-cell{min-height:52px; padding:6px 7px;}
+tr.cc-row-canteen td.cc-cell{min-height:78px; padding:9px 7px;}
 .cc-entry{font-weight:700; color:var(--ink); line-height:1.4;}
 .cc-batch{font-size:10.5px; color:var(--ink-muted); line-height:1.4; margin-bottom:3px;}
 .cc-empty{color:var(--ink-muted); font-size:11.5px;}
@@ -2495,8 +2504,6 @@ async function downloadLotReport(){
     const SUN_FONT = {bold:true, color:{argb:'FFC0392B'}};
     const HOLIDAY_FONT = {bold:true, color:{argb:'FFC0392B'}};
     const WEEK_HEADER_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF2F2F2'}};
-    const CANTEEN_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF1DFC7'}};
-    const PROD_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFE3EFFB'}};
 
     let r4 = 4;
     const headRow4 = ws4.getRow(r4);
@@ -2548,8 +2555,8 @@ async function downloadLotReport(){
         cell.alignment = {wrapText:true, vertical:'middle', horizontal:'center'};
         if (dStr < calTodayStr) cell.font = GRAY_FONT;
       });
-      canteenRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; cell.fill = CANTEEN_FILL; });
-      canteenRow.height = 34;
+      canteenRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
+      canteenRow.height = 39;
       r4++;
 
       const prodRow = ws4.getRow(r4);
@@ -2567,7 +2574,7 @@ async function downloadLotReport(){
         cell.alignment = {wrapText:true, vertical:'middle', horizontal:'center'};
         if (dStr < calTodayStr) cell.font = GRAY_FONT;
       });
-      prodRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; cell.fill = PROD_FILL; });
+      prodRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
       prodRow.height = 26;
       r4++;
     }

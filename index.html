@@ -382,8 +382,10 @@ tr.cc-row td.cc-label-col{border:none; background:transparent; font-weight:700; 
 .cc-row-fields .field{min-width:90px;}
 .cc-row-fields .cc-del-btn{flex:0 0 auto; align-self:center;}
 .cc-recipe-block{margin-top:10px; padding-top:9px; border-top:1px dotted var(--border);}
-.cc-recipe-label{font-size:10.5px; font-weight:800; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px;}
+.cc-recipe-label{display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:10.5px; font-weight:800; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px;}
 .cc-recipe-hint{font-weight:600; text-transform:none; letter-spacing:0; color:var(--ink-muted);}
+.cc-load-recipe-btn{appearance:none; border:none; background:transparent; cursor:pointer; padding:0; font:inherit; font-size:10.5px; font-weight:800; text-transform:none; letter-spacing:0; color:var(--accent); text-decoration:underline;}
+.cc-load-recipe-btn:hover{color:var(--ink);}
 
 @media (max-width:640px){
   .brand h1{font-size:16.5px;}
@@ -1516,6 +1518,13 @@ let brewRecipes = []; // {id, date:'YYYY-MM-DD', item, weight, water, grind, ice
 function brewRecipeFor(date, item){
   return brewRecipes.find(r => r.date === date && r.item === item);
 }
+/* 같은 원두로 저장된 레시피 중, 값이 실제로 채워져 있는 것 중에서 가장 최근 날짜의
+   레시피를 찾습니다 — "불러오기" 버튼이 이걸 가져와서 그대로 입력란에 채워줍니다. */
+function latestBrewRecipeForItem(item){
+  const matches = brewRecipes.filter(r => r.item === item && (r.weight || r.water || r.grind || r.ice));
+  if (!matches.length) return null;
+  return matches.slice().sort((a,b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))[0];
+}
 const CC_WEEKDAYS = ['월','화','수','목','금','토','일'];
 const CC_WEEKS_SHOWN = 4;
 
@@ -1638,7 +1647,9 @@ function renderCoffeeModalRows(){
         ${ccModalRows.length > 1 ? `<button type="button" class="row-btn danger cc-del-btn">삭제</button>` : ''}
       </div>
       <div class="cc-recipe-block">
-        <div class="cc-recipe-label">배치브루 레시피 <span class="cc-recipe-hint">(캘린더 화면에는 표시되지 않아요)</span></div>
+        <div class="cc-recipe-label">배치브루 레시피 <span class="cc-recipe-hint">(캘린더 화면에는 표시되지 않아요)</span>
+          <button type="button" class="cc-load-recipe-btn">⟲ 최근 레시피 불러오기</button>
+        </div>
         <div class="cc-row-fields">
           <div class="field" style="flex:1 1 90px;">
             <label>원두 중량(g)</label>
@@ -1804,6 +1815,30 @@ document.getElementById('coffeeModalRows').addEventListener('input', (evt) => {
   else if (evt.target.classList.contains('cc-f-rice')) { row.recipe = row.recipe || {}; row.recipe.ice = evt.target.value; }
 });
 document.getElementById('coffeeModalRows').addEventListener('click', (evt) => {
+  const loadBtn = evt.target.closest('.cc-load-recipe-btn');
+  if (loadBtn){
+    const idx = Number(loadBtn.closest('.cc-row-wrap').dataset.idx);
+    const row = ccModalRows[idx];
+    const msg = document.getElementById('coffeeModalMsg');
+    if (!row) return;
+    const item = (row.item||'').trim();
+    if (!item){
+      msg.textContent = '먼저 품목(원두명)을 입력해주세요.';
+      msg.className = 'form-msg err';
+      return;
+    }
+    const latest = latestBrewRecipeForItem(item);
+    if (!latest){
+      msg.textContent = `"${item}" 원두로 저장된 레시피가 아직 없습니다.`;
+      msg.className = 'form-msg err';
+      return;
+    }
+    row.recipe = {weight: latest.weight, water: latest.water, grind: latest.grind, ice: latest.ice};
+    msg.textContent = `${latest.date}에 저장한 레시피를 불러왔습니다.`;
+    msg.className = 'form-msg ok';
+    renderCoffeeModalRows();
+    return;
+  }
   const btn = evt.target.closest('.cc-del-btn');
   if (!btn) return;
   const idx = Number(btn.closest('.cc-row-wrap').dataset.idx);

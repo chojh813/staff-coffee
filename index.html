@@ -603,9 +603,6 @@ tr.recipe-pick-row:hover td{background:var(--surface-2);}
     </div>
     <label class="checkbox-label" id="coffeeNoServiceWrap"><input type="checkbox" id="coffeeNoServiceCk"> 이 날은 제공 안 함</label>
     <div id="coffeeModalRows"></div>
-    <datalist id="ccSizeList">
-      <option value="100g"><option value="200g"><option value="500g"><option value="1kg">
-    </datalist>
     <button type="button" class="btn-ghost" id="coffeeAddRowBtn">+ 원두 추가</button>
     <div class="form-actions">
       <button type="button" class="btn-primary" id="coffeeModalSave">저장</button>
@@ -1669,7 +1666,7 @@ function renderCoffeeModalRows(){
         </div>
         <div class="field" style="flex:1 1 90px;">
           <label>중량</label>
-          <input type="text" class="cc-f-size" list="ccSizeList" value="${row.size||''}" placeholder="예: 200g">
+          <input type="text" class="cc-f-size" value="${row.size||''}" placeholder="예: 200g">
         </div>
         <div class="field" style="flex:1 1 70px;">
           <label>수량</label>
@@ -2420,6 +2417,95 @@ async function downloadLotReport(){
     const lastRow3 = r3 - 1;
     ws3.autoFilter = {from:'A4', to:`G${lastRow3}`};
     ws3.views = [{state:'frozen', ySplit:4}];
+
+    /* ---- 시트4: 오늘의 커피 (다운로드일로부터 4주) ----
+       "오늘의 커피" 탭 화면과 똑같은 coffeeCalEntries/coffeeEntriesFor()를 그대로
+       써서, 다운로드한 날이 포함된 주의 월요일부터 4주를 그립니다. 이미 지난 날짜는
+       글자를 회색으로 흐리게, 입력이 없는 칸은 빈 칸으로 둡니다. */
+    const ws4 = wb.addWorksheet('오늘의 커피');
+    ws4.getCell('A1').value = '오늘의 커피 캘린더 — 다운로드일부터 4주';
+    ws4.getCell('A1').font = {bold:true, size:13};
+    ws4.getCell('A2').value = '이미 지난 날짜는 회색 글씨로, 입력이 없는 칸은 빈 칸으로 표시됩니다.';
+    ws4.columns = [{width:14}, {width:20},{width:20},{width:20},{width:20},{width:20},{width:20},{width:20}];
+
+    const calTodayStr = localYMD(new Date());
+    const calStart = mondayOf(new Date());
+    const GRAY_FONT = {color:{argb:'FF999999'}};
+    const SAT_FONT = {bold:true, color:{argb:'FF2A78D6'}};
+    const SUN_FONT = {bold:true, color:{argb:'FFC0392B'}};
+    const WEEK_HEADER_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF2F2F2'}};
+
+    let r4 = 4;
+    const headRow4 = ws4.getRow(r4);
+    headRow4.getCell(1).value = '';
+    CC_WEEKDAYS.forEach((w,i) => { headRow4.getCell(2+i).value = w; });
+    styleHeaderRow(headRow4);
+    r4++;
+
+    for (let w = 0; w < CC_WEEKS_SHOWN; w++){
+      const weekStart = addDays(calStart, w*7);
+      const days = Array.from({length:7}, (_,i) => addDays(weekStart, i));
+
+      const dateRow = ws4.getRow(r4);
+      dateRow.getCell(1).value = '';
+      days.forEach((d,i) => {
+        const dStr = localYMD(d);
+        const cell = dateRow.getCell(2+i);
+        cell.value = d;
+        cell.numFmt = 'm/d';
+        cell.alignment = {horizontal:'center'};
+        if (dStr < calTodayStr) cell.font = {bold:true, color:GRAY_FONT.color};
+        else if (i === 5) cell.font = SAT_FONT;
+        else if (i === 6) cell.font = SUN_FONT;
+        else cell.font = {bold:true};
+      });
+      dateRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; cell.fill = WEEK_HEADER_FILL; });
+      r4++;
+
+      const canteenRow = ws4.getRow(r4);
+      canteenRow.getCell(1).value = '직원식당';
+      canteenRow.getCell(1).font = {bold:true};
+      days.forEach((d,i) => {
+        const dStr = localYMD(d);
+        const entries = coffeeEntriesFor(dStr, 'canteen');
+        const cell = canteenRow.getCell(2+i);
+        let text = '';
+        if (entries.some(e => e.noService)) text = '제공없음';
+        else if (entries.length){
+          text = entries.map(e => {
+            const sizeTxt = e.size ? ` ${e.size}` : '';
+            const qtyTxt = (Number(e.qty) > 1) ? ` ×${e.qty}` : '';
+            const batchTxt = e.batch ? ` (제조일자 ${e.batch})` : '';
+            return `${e.item}${sizeTxt}${qtyTxt}${batchTxt}`;
+          }).join('\n');
+        }
+        cell.value = text;
+        cell.alignment = {wrapText:true, vertical:'top'};
+        if (dStr < calTodayStr) cell.font = GRAY_FONT;
+      });
+      canteenRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
+      canteenRow.height = 34;
+      r4++;
+
+      const prodRow = ws4.getRow(r4);
+      prodRow.getCell(1).value = '생산부 휴게실';
+      prodRow.getCell(1).font = {bold:true};
+      days.forEach((d,i) => {
+        const dStr = localYMD(d);
+        const entries = coffeeEntriesFor(dStr, 'production');
+        const cell = prodRow.getCell(2+i);
+        let text = '';
+        if (entries.some(e => e.noService)) text = '제공없음';
+        else if (entries.length) text = entries.map(e => e.item).join('\n');
+        cell.value = text;
+        cell.alignment = {wrapText:true, vertical:'top'};
+        if (dStr < calTodayStr) cell.font = GRAY_FONT;
+      });
+      prodRow.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
+      prodRow.height = 26;
+      r4++;
+    }
+    ws4.views = [{state:'frozen', xSplit:1, ySplit:4}];
 
     const buf = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});

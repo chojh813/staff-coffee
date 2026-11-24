@@ -1342,8 +1342,8 @@ function startEdit(id){
   fBatch.value = rec.batch;
   fLoc.value = rec.type === '사용' ? rec.loc : '';
   if (rec.material === 'bean'){
-    if (rec.size === 'custom'){
-      /* 직접입력(g) 규격은 개수 환산 없이 저장된 총 그람수를 그대로 보여줍니다. */
+    if (rec.type === '사용' || rec.size === 'custom'){
+      /* "사용" 기록과 직접입력(g) 규격은 개수 환산 없이 저장된 총 그람수를 그대로 보여줍니다. */
       fQty.value = rec.qty || '';
     } else {
       const g = SIZE_GRAMS[rec.size];
@@ -1412,8 +1412,10 @@ fDate.value = localYMD(new Date());
 document.querySelectorAll('.type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     setFormType(btn.dataset.type);
+    updateQtyUnitLabel();
     updateBatchList();
     updateBatchHint();
+    updateQtyHint();
   });
 });
 
@@ -1457,10 +1459,14 @@ function refreshFormContext(){
    그람 단위로 정확히 맞습니다.
    다만 "1kg 봉투에 200g을 더 넣었다" 같이 정해진 규격에 딱 안 맞는 경우를 위해,
    규격을 "직접입력(g)"으로 고르면 개수×규격 계산 없이 입력한 숫자를 총 그람수로
-   그대로 저장합니다. */
-function qtyToGrams(size, rawQty){
+   그대로 저장합니다.
+   "사용"은 애초에 봉투 단위로 딱 떨어지게 쓰는 일이 거의 없어서(예: 1kg 중 500g만
+   사용) 개수×규격 환산을 아예 적용하지 않고, 수량 입력란에 쓴 그람 수를 그대로
+   저장합니다. 이때도 규격은 "어느 로트(품목+규격+제조일자)에서 차감할지"를 정하는
+   용도로는 그대로 선택해야 합니다. */
+function qtyToGrams(size, rawQty, type){
   const count = Number(rawQty) || 0;
-  if (size === 'custom') return count > 0 ? Math.round(count) : 0;
+  if (type === '사용' || size === 'custom') return count > 0 ? Math.round(count) : 0;
   const g = SIZE_GRAMS[size];
   return (g && count > 0) ? Math.round(g * count) : 0;
 }
@@ -1470,9 +1476,9 @@ function updateQtyUnitLabel(){
     fQty.placeholder = '0';
     return;
   }
-  if (fSize.value === 'custom'){
+  if (formType === '사용' || fSize.value === 'custom'){
     fQtyUnit.textContent = 'g';
-    fQty.placeholder = '예: 1200';
+    fQty.placeholder = formType === '사용' ? '예: 500' : '예: 1200';
   } else {
     fQtyUnit.textContent = '개';
     fQty.placeholder = '예: 2';
@@ -1480,6 +1486,14 @@ function updateQtyUnitLabel(){
 }
 function updateQtyHint(editingRec){
   if (detailMaterial !== 'bean'){ fQtyHint.textContent = ''; fQtyHint.className = 'hint'; return; }
+  if (formType === '사용'){
+    const q = Number(fQty.value) || 0;
+    fQtyHint.textContent = q
+      ? `= 이 로트에서 ${fmt(q)}g 을 차감합니다`
+      : (fSize.value ? '이 로트에서 실제로 사용한 그람 수를 입력해주세요.' : '먼저 규격(로트)을 선택해주세요.');
+    fQtyHint.className = q ? 'hint ok' : 'hint';
+    return;
+  }
   if (fSize.value === 'custom'){
     const q = Number(fQty.value) || 0;
     fQtyHint.textContent = q
@@ -1536,7 +1550,7 @@ function updateBatchHint(){
     return;
   }
   if (formType === '사용'){
-    const qty = detailMaterial==='bean' ? qtyToGrams(fSize.value, fQty.value) : (Number(fQty.value)||0);
+    const qty = detailMaterial==='bean' ? qtyToGrams(fSize.value, fQty.value, formType) : (Number(fQty.value)||0);
     if (qty > match.remain){
       fBatchHint.textContent = `현재 재고 ${fmt(match.remain)}${unit} — 입력한 수량이 재고보다 많습니다.`;
       fBatchHint.className = 'hint warn';
@@ -2136,10 +2150,11 @@ document.getElementById('recordForm').addEventListener('submit', async (evt) => 
     formMsg.className = 'form-msg err';
     return;
   }
-  /* 원두는 "규격 × 개수"를 총 그람수로 환산해서 저장합니다. */
-  const qty = detailMaterial === 'bean' ? qtyToGrams(size, rawQty) : rawQty;
+  /* 원두 "입고"는 "규격 × 개수"를 총 그람수로 환산해서 저장하고, "사용"은 환산 없이
+     입력한 그람 수를 그대로 저장합니다(규격은 어느 로트에서 차감할지 정하는 용도). */
+  const qty = detailMaterial === 'bean' ? qtyToGrams(size, rawQty, formType) : rawQty;
   if (detailMaterial === 'bean' && qty <= 0){
-    formMsg.textContent = '개수를 확인해주세요.';
+    formMsg.textContent = formType === '사용' ? '사용한 그람 수를 확인해주세요.' : '개수를 확인해주세요.';
     formMsg.className = 'form-msg err';
     return;
   }

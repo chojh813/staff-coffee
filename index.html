@@ -257,6 +257,7 @@ tbody tr.new-row td{animation:flashNew 1.6s ease-out;}
 .pill.out{background:var(--accent-soft); color:var(--accent);}
 .dim{color:var(--ink-muted);}
 .num{text-align:right; font-weight:600;}
+.memo-cell{max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .empty-row td{text-align:center; color:var(--ink-muted); padding:26px; font-style:normal;}
 
 .summary-grid{display:grid; grid-template-columns:2fr 1fr; gap:14px;}
@@ -292,13 +293,16 @@ tbody tr.new-row td{animation:flashNew 1.6s ease-out;}
 .type-btn.active[data-type="사용"]{background:var(--accent-soft); color:var(--accent);}
 .form-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px 16px; margin-top:12px;}
 .form-grid .field.span-2{grid-column:span 2;}
+.form-grid .field.span-4{grid-column:span 4;}
 @media (max-width: 880px){
   .form-grid{grid-template-columns:repeat(2, 1fr);}
   .form-grid .field.span-2{grid-column:span 2;}
+  .form-grid .field.span-4{grid-column:span 2;}
 }
 @media (max-width: 480px){
   .form-grid{grid-template-columns:1fr;}
   .form-grid .field.span-2{grid-column:span 1;}
+  .form-grid .field.span-4{grid-column:span 1;}
 }
 .field{display:flex; flex-direction:column; gap:5px; min-width:0;}
 .field label{font-size:11.5px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.03em;}
@@ -559,6 +563,10 @@ tr.recipe-pick-row:hover td{background:var(--surface-2);}
                   <label for="fQty">수량 (<span id="fQtyUnit">g</span>)</label>
                   <input type="number" id="fQty" min="0" step="1" placeholder="0" required>
                   <div class="hint" id="fQtyHint"></div>
+                </div>
+                <div class="field span-4">
+                  <label for="fMemo">메모 (선택)</label>
+                  <input type="text" id="fMemo" placeholder="예: 직원 요청으로 연습용 지급">
                 </div>
               </div>
               <div class="form-actions">
@@ -1072,10 +1080,10 @@ function renderRecordsTable(){
   const recArrow = (col) => recSortCol === col
     ? `<span class="sort-arrow">${recSortDir === 'asc' ? '▲' : '▼'}</span>` : '';
   let html = `<table><thead><tr>
-    <th>날짜</th><th class="sortable" data-sort="type">구분${recArrow('type')}</th><th>품목</th><th>품목코드</th><th class="sortable" data-sort="size">규격${recArrow('size')}</th><th class="sortable" data-sort="batch">${dateCol}${recArrow('batch')}</th><th class="sortable" data-sort="loc">사용처${recArrow('loc')}</th><th class="num">${qtyCol}</th><th class="num">${stockCol}</th><th>작업</th>
+    <th>날짜</th><th class="sortable" data-sort="type">구분${recArrow('type')}</th><th>품목</th><th>품목코드</th><th class="sortable" data-sort="size">규격${recArrow('size')}</th><th class="sortable" data-sort="batch">${dateCol}${recArrow('batch')}</th><th class="sortable" data-sort="loc">사용처${recArrow('loc')}</th><th class="num">${qtyCol}</th><th class="num">${stockCol}</th><th>메모</th><th>작업</th>
   </tr></thead><tbody>`;
   if (filtered.length === 0){
-    html += `<tr class="empty-row"><td colspan="10">검색 결과가 없습니다.</td></tr>`;
+    html += `<tr class="empty-row"><td colspan="11">검색 결과가 없습니다.</td></tr>`;
   } else {
     const listed = recSortCol
       ? [...filtered].sort((a, b) => {
@@ -1098,6 +1106,7 @@ function renderRecordsTable(){
         <td>${r.loc && r.loc !== '-' ? r.loc : '<span class="dim">-</span>'}</td>
         <td class="num">${qtyCell(r)}</td>
         <td class="num">${fmt(r.stockAfter)}</td>
+        <td class="dim memo-cell" ${r.memo ? `title="${r.memo.replace(/"/g,'&quot;')}"` : ''}>${r.memo||''}</td>
         <td><div class="row-actions">
           <button type="button" class="row-btn" data-action="edit" data-id="${r.id}">수정</button>
           <button type="button" class="row-btn danger" data-action="delete" data-id="${r.id}">삭제</button>
@@ -1294,6 +1303,7 @@ const fLoc = document.getElementById('fLoc');
 const fQty = document.getElementById('fQty');
 const fQtyUnit = document.getElementById('fQtyUnit');
 const fQtyHint = document.getElementById('fQtyHint');
+const fMemo = document.getElementById('fMemo');
 const fSubmit = document.getElementById('fSubmit');
 const fCancelEdit = document.getElementById('fCancelEdit');
 const formMsg = document.getElementById('formMsg');
@@ -1319,7 +1329,7 @@ function resetFormToAdd(){
   fSubmit.textContent = '저장';
   setFormType('입고');
   fDate.value = localYMD(new Date());
-  fItem.value = ''; fCode.value=''; fSize.value=''; fBatch.value=''; fQty.value=''; fLoc.value='';
+  fItem.value = ''; fCode.value=''; fSize.value=''; fBatch.value=''; fQty.value=''; fLoc.value=''; fMemo.value='';
   codeAutoFilled = true;
   fBatchHint.textContent = ''; fBatchHint.className = 'hint';
   refreshFormContext();
@@ -1341,6 +1351,7 @@ function startEdit(id){
   fSize.value = rec.size || '';
   fBatch.value = rec.batch;
   fLoc.value = rec.type === '사용' ? rec.loc : '';
+  fMemo.value = rec.memo || '';
   if (rec.material === 'bean'){
     if (rec.type === '사용' || rec.size === 'custom'){
       /* "사용" 기록과 직접입력(g) 규격은 개수 환산 없이 저장된 총 그람수를 그대로 보여줍니다. */
@@ -2074,7 +2085,7 @@ async function fetchRecordsFromSheet(isFirstLoad){
     if (!data || data.ok !== true) throw new Error('bad response');
     usingSheetSync = true;
     setSyncBadge('live');
-    records = (data.records || []).map(r => ({...r, date: normDate(r.date), batch: (r.batch==null?'':String(r.batch)), size: (r.size==null?'':String(r.size)), qty: Number(r.qty)||0}));
+    records = (data.records || []).map(r => ({...r, date: normDate(r.date), batch: (r.batch==null?'':String(r.batch)), size: (r.size==null?'':String(r.size)), memo: (r.memo==null?'':String(r.memo)), qty: Number(r.qty)||0}));
     coffeeCalEntries = (data.calEntries || []).map(e => ({
       ...e,
       date: normDate(e.date),
@@ -2174,6 +2185,7 @@ document.getElementById('recordForm').addEventListener('submit', async (evt) => 
     batch,
     loc: formType === '사용' ? fLoc.value : '-',
     qty,
+    memo: fMemo.value.trim(),
   };
 
   const isEdit = !!editingId;
@@ -2227,11 +2239,11 @@ function exportRecordsSheetData(material){
     .sort((a,b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id < b.id ? -1 : 1)));
   const dateCol = material === 'bean' ? '제조일자' : '소비기한';
   const unit = unitOf(material);
-  const header = ['날짜','구분','품목','품목코드','규격', dateCol, '사용처', `수량(${unit})`, `기록후 재고(${unit})`];
+  const header = ['날짜','구분','품목','품목코드','규격', dateCol, '사용처', `수량(${unit})`, `기록후 재고(${unit})`, '메모'];
   const rows = withStock.map(r => [
     r.date, r.type, r.item, r.code||'', r.size||'', r.batch,
     (r.loc && r.loc !== '-') ? r.loc : '',
-    r.qty, r.stockAfter,
+    r.qty, r.stockAfter, r.memo||'',
   ]);
   return [header, ...rows];
 }
@@ -2275,11 +2287,11 @@ function exportCurrentRecordsView(){
   const filtered = withStock.filter(r => !searchTerm || r.item.toLowerCase().includes(searchTerm));
   const dateCol = detailMaterial === 'bean' ? '제조일자' : '소비기한';
   const unit = unitOf(detailMaterial);
-  const header = ['날짜','구분','품목','품목코드','규격', dateCol, '사용처', `수량(${unit})`, `기록후 재고(${unit})`];
+  const header = ['날짜','구분','품목','품목코드','규격', dateCol, '사용처', `수량(${unit})`, `기록후 재고(${unit})`, '메모'];
   const rows = filtered.slice().reverse().map(r => [
     r.date, r.type, r.item, r.code||'', r.size||'', r.batch,
     (r.loc && r.loc !== '-') ? r.loc : '',
-    r.qty, r.stockAfter,
+    r.qty, r.stockAfter, r.memo||'',
   ]);
   return [header, ...rows];
 }
@@ -2384,11 +2396,11 @@ async function downloadLotReport(){
     ws1.getCell('A1').value = '원두 품목별 입출고 내역 (품목별 · 제조일자 빠른 순)';
     ws1.getCell('A1').font = {bold:true, size:13};
     ws1.getCell('A2').value = '※ 로트 = 품목 + 규격 + 제조일자. "로트 잔여(g)"는 같은 로트 안에서 위에서부터 누적한 입고−출고입니다.';
-    const header1 = ['품목','품목코드','규격','제조일자','날짜','구분','사용처','입고(g)','출고(g)','로트 잔여(g)'];
+    const header1 = ['품목','품목코드','규격','제조일자','날짜','구분','사용처','입고(g)','출고(g)','로트 잔여(g)','메모'];
     ws1.getRow(4).values = header1;
     styleHeaderRow(ws1.getRow(4));
     ws1.columns = [
-      {width:34},{width:11},{width:8},{width:12},{width:12},{width:7},{width:12},{width:10},{width:10},{width:12},
+      {width:34},{width:11},{width:8},{width:12},{width:12},{width:7},{width:12},{width:10},{width:10},{width:12},{width:24},
     ];
 
     let r1 = 5;
@@ -2414,12 +2426,13 @@ async function downloadLotReport(){
         row.getCell(10).value = running;
         row.getCell(10).numFmt = NUMFMT;
         row.getCell(10).font = {bold:true};
+        row.getCell(11).value = rec.memo || '';
         row.eachCell({includeEmpty:true}, cell => { cell.border = THIN_BORDER; });
         r1++;
       });
     });
     const lastRow1 = r1 - 1;
-    ws1.autoFilter = {from:'A4', to:`J${lastRow1}`};
+    ws1.autoFilter = {from:'A4', to:`K${lastRow1}`};
     ws1.views = [{state:'frozen', ySplit:4}];
 
     /* ---- 시트2: 규격별 잔여 ---- */
@@ -2796,13 +2809,16 @@ function parseImportWorkbook(wb){
     if (!ws) return;
     const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:''});
     rows.slice(1).forEach(row => {
-      const [date, type, item, code, size, batch, loc, qty] = row;
+      /* [날짜,구분,품목,품목코드,규격,제조일자,사용처,수량, 기록후재고(건너뜀), 메모] 순서.
+         재고는 다시 계산되는 값이라 가져오지 않고, 메모는 마지막 칸에서 읽습니다. */
+      const [date, type, item, code, size, batch, loc, qty, , memo] = row;
       if (!item || (type !== '입고' && type !== '사용')) return;
       out.push({
         material, date: cellToYMD(date), type, item: String(item).trim(),
         code: String(code||'').trim(), size: String(size||'').trim(), batch: String(batch||'').trim(),
         loc: type === '사용' ? (String(loc||'').trim() || '-') : '-',
         qty: Number(qty)||0,
+        memo: String(memo||'').trim(),
       });
     });
   });

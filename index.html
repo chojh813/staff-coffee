@@ -247,6 +247,8 @@ thead th{
   text-transform:uppercase; letter-spacing:.03em; border-bottom:1px solid var(--border);
   white-space:nowrap;
 }
+thead th.brew-sort-th{cursor:pointer; user-select:none;}
+thead th.brew-sort-th:hover{color:var(--accent);}
 tbody td{padding:8px 12px; border-bottom:1px solid var(--border); color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums;}
 tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover td{background:var(--surface-2);}
@@ -1997,17 +1999,43 @@ document.getElementById('coffeeModalRows').addEventListener('click', (evt) => {
    똑같은 filteredBrewRecipes()/행 렌더링을 재사용합니다) ---- */
 let brewSearchTerm = '';
 let recipePickerRowIdx = null;
-
+/* "브루잉 레시피" 탭 목록의 정렬 상태. 기본은 날짜 내림차순(최신이 위)이고,
+   원두명/구분 헤더를 클릭하면 그 기준으로 다시 정렬됩니다(다시 누르면 방향 반전).
+   날짜가 기준이 아닐 때도 같은 값끼리는 항상 날짜 내림차순으로 2차 정렬됩니다. */
+let brewSortKey = null; // null(=날짜만) | 'item' | 'type'
+let brewSortDir = 'asc';
+function sortedBrewList(list){
+  const key = brewSortKey, dir = brewSortDir;
+  return list.slice().sort((a, b) => {
+    if (key === 'item'){
+      const c = a.item.localeCompare(b.item, 'ko');
+      if (c !== 0) return dir === 'asc' ? c : -c;
+    } else if (key === 'type'){
+      const ta = a.type === '핫' ? '핫' : '아이스';
+      const tb = b.type === '핫' ? '핫' : '아이스';
+      const c = ta.localeCompare(tb, 'ko');
+      if (c !== 0) return dir === 'asc' ? c : -c;
+    }
+    return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+  });
+}
 function brewTableRowsHtml(list, mode){
   if (!list.length){
     return `<table><tbody><tr class="empty-row"><td>${mode==='pick' ? '검색 결과가 없습니다.' : '저장된 레시피가 없습니다.'}</td></tr></tbody></table>`;
   }
   const extraCol = mode === 'browse' ? '<th></th>' : '';
+  const sortArrow = (key) => brewSortKey === key ? (brewSortDir === 'asc' ? ' ▲' : ' ▼') : '';
+  const thItem = mode === 'browse'
+    ? `<th class="brew-sort-th" data-sort="item">원두명${sortArrow('item')}</th>`
+    : `<th>원두명</th>`;
+  const thType = mode === 'browse'
+    ? `<th class="brew-sort-th" data-sort="type">구분${sortArrow('type')}</th>`
+    : `<th>구분</th>`;
   return `<table>
-    <thead><tr><th>원두명</th><th>날짜</th><th>구분</th><th class="num">중량(g)</th><th class="num">물의 양(ml)</th><th class="num">분쇄도</th><th class="num">얼음량(%)</th><th class="num">추가 물의양(ml)</th>${extraCol}</tr></thead>
+    <thead><tr><th>날짜</th>${thItem}${thType}<th class="num">중량(g)</th><th class="num">물의 양(ml)</th><th class="num">분쇄도</th><th class="num">얼음량(%)</th><th class="num">추가 물의양(ml)</th>${extraCol}</tr></thead>
     <tbody>${list.map(r => {
       const rtype = r.type === '핫' ? '핫' : '아이스';
-      const cells = `<td>${r.item}</td><td>${r.date}</td><td>${rtype}</td><td class="num">${r.weight||'-'}</td><td class="num">${r.water||'-'}</td><td class="num">${r.grind||'-'}</td><td class="num">${rtype==='아이스' ? (r.ice||'-') : '-'}</td><td class="num">${rtype==='핫' ? (r.extraWater||'-') : '-'}</td>`;
+      const cells = `<td>${r.date}</td><td>${r.item}</td><td>${rtype}</td><td class="num">${r.weight||'-'}</td><td class="num">${r.water||'-'}</td><td class="num">${r.grind||'-'}</td><td class="num">${rtype==='아이스' ? (r.ice||'-') : '-'}</td><td class="num">${rtype==='핫' ? (r.extraWater||'-') : '-'}</td>`;
       if (mode === 'pick'){
         return `<tr class="recipe-pick-row" data-id="${r.id}">${cells}</tr>`;
       }
@@ -2018,7 +2046,7 @@ function brewTableRowsHtml(list, mode){
 function renderBrewTable(){
   const wrap = document.getElementById('tblBrewWrap');
   if (!wrap) return;
-  wrap.innerHTML = brewTableRowsHtml(filteredBrewRecipes(brewSearchTerm), 'browse');
+  wrap.innerHTML = brewTableRowsHtml(sortedBrewList(filteredBrewRecipes(brewSearchTerm)), 'browse');
 }
 function renderRecipePickerList(){
   const wrap = document.getElementById('recipePickerListWrap');
@@ -2041,6 +2069,14 @@ document.getElementById('brewSearchBox').addEventListener('input', (evt) => {
   renderBrewTable();
 });
 document.getElementById('tblBrewWrap').addEventListener('click', async (evt) => {
+  const sortTh = evt.target.closest('.brew-sort-th');
+  if (sortTh){
+    const key = sortTh.dataset.sort;
+    brewSortDir = (brewSortKey === key) ? (brewSortDir === 'asc' ? 'desc' : 'asc') : 'asc';
+    brewSortKey = key;
+    renderBrewTable();
+    return;
+  }
   const btn = evt.target.closest('[data-action="delete-brew"]');
   if (!btn) return;
   const id = btn.dataset.id;

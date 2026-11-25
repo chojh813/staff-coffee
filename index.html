@@ -1601,6 +1601,9 @@ let brewRecipes = []; // {id, date:'YYYY-MM-DD', item, type:'아이스'|'핫', w
 function brewRecipeFor(date, item){
   return brewRecipes.find(r => r.date === date && r.item === item);
 }
+/* 핫/아이스 구분은 내부적으로는 그대로 '핫'/'아이스' 값을 저장·비교하지만(기존 저장 데이터와
+   호환), 화면에 보여줄 때만 영문 "HOT"/"ICE"로 표시합니다. */
+function rtypeLabel(rtype){ return rtype === '핫' ? 'HOT' : 'ICE'; }
 /* 저장된 레시피 목록을 품목명(검색어) 기준으로 걸러서, 원두명 오름차순 → 같은 원두는
    최신 날짜순으로 정렬합니다. "브루잉 레시피" 탭 목록과, 캘린더 입력창의 "레시피
    목록에서 선택" 팝업이 똑같은 이 목록을 그대로 재사용합니다. */
@@ -1790,8 +1793,8 @@ function renderCoffeeModalRows(){
           <button type="button" class="cc-pick-recipe-btn">레시피 목록에서 선택</button>
         </div>
         <div class="cc-recipe-type-toggle">
-          <button type="button" class="cc-recipe-type-btn ${rtype==='아이스'?'active':''}" data-rtype="아이스">아이스</button>
-          <button type="button" class="cc-recipe-type-btn ${rtype==='핫'?'active':''}" data-rtype="핫">핫</button>
+          <button type="button" class="cc-recipe-type-btn ${rtype==='핫'?'active':''}" data-rtype="핫">${rtypeLabel('핫')}</button>
+          <button type="button" class="cc-recipe-type-btn ${rtype==='아이스'?'active':''}" data-rtype="아이스">${rtypeLabel('아이스')}</button>
         </div>
         <div class="cc-row-fields">
           <div class="field" style="flex:1 1 90px;">
@@ -2035,7 +2038,7 @@ function brewTableRowsHtml(list, mode){
     <thead><tr><th>날짜</th>${thItem}${thType}<th class="num">중량(g)</th><th class="num">물의 양(ml)</th><th class="num">분쇄도</th><th class="num">얼음량(%)</th><th class="num">추가 물의양(ml)</th>${extraCol}</tr></thead>
     <tbody>${list.map(r => {
       const rtype = r.type === '핫' ? '핫' : '아이스';
-      const cells = `<td>${r.date}</td><td>${r.item}</td><td>${rtype}</td><td class="num">${r.weight||'-'}</td><td class="num">${r.water||'-'}</td><td class="num">${r.grind||'-'}</td><td class="num">${rtype==='아이스' ? (r.ice||'-') : '-'}</td><td class="num">${rtype==='핫' ? (r.extraWater||'-') : '-'}</td>`;
+      const cells = `<td>${r.date}</td><td>${r.item}</td><td>${rtypeLabel(rtype)}</td><td class="num">${r.weight||'-'}</td><td class="num">${r.water||'-'}</td><td class="num">${r.grind||'-'}</td><td class="num">${rtype==='아이스' ? (r.ice||'-') : '-'}</td><td class="num">${rtype==='핫' ? (r.extraWater||'-') : '-'}</td>`;
       if (mode === 'pick'){
         return `<tr class="recipe-pick-row" data-id="${r.id}">${cells}</tr>`;
       }

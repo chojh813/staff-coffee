@@ -1597,7 +1597,7 @@ let coffeeCalEntries = []; // {id, date:'YYYY-MM-DD', loc:'canteen'|'production'
 /* 직원식당 원두의 배치브루 레시피(원두 중량·물의 양·분쇄도·얼음량)는 캘린더 화면에는
    보여주지 않지만, 날짜·원두명 기준으로 따로 저장해둡니다. 캘린더 입력 모달에서 같은
    원두 옆에 입력란만 함께 두고, 데이터는 coffeeCalEntries와는 별도의 목록/시트에 둡니다. */
-let brewRecipes = []; // {id, date:'YYYY-MM-DD', item, type:'아이스'|'핫', weight, water, grind, ice, extraWater}
+let brewRecipes = []; // {id, date:'YYYY-MM-DD', item, type:'아이스'|'핫', weight, water, grind, ice, extraWater, note}
 function brewRecipeFor(date, item){
   return brewRecipes.find(r => r.date === date && r.item === item);
 }
@@ -1819,6 +1819,12 @@ function renderCoffeeModalRows(){
             <input type="text" class="cc-f-rice" value="${recipe.ice||''}" placeholder="예: 30">
           </div>`}
         </div>
+        <div class="cc-row-fields">
+          <div class="field" style="flex:1 1 100%;">
+            <label>비고</label>
+            <input type="text" class="cc-f-rnote" value="${recipe.note||''}" placeholder="예: 원액, 코닉 그라인더 등">
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1839,11 +1845,11 @@ function openCoffeeModal(dateStr, loc){
       recipe: {
         type: recipe && recipe.type === '핫' ? '핫' : '아이스',
         weight: recipe ? recipe.weight : '', water: recipe ? recipe.water : '', grind: recipe ? recipe.grind : '',
-        ice: recipe ? recipe.ice : '', extraWater: recipe ? recipe.extraWater : '',
+        ice: recipe ? recipe.ice : '', extraWater: recipe ? recipe.extraWater : '', note: recipe ? recipe.note : '',
       },
     };
   });
-  if (!existingNoService && ccModalRows.length === 0) ccModalRows.push({item:'', size:'', qty:1, batch:'', recipeId:null, recipe:{type:'아이스',weight:'',water:'',grind:'',ice:'',extraWater:''}});
+  if (!existingNoService && ccModalRows.length === 0) ccModalRows.push({item:'', size:'', qty:1, batch:'', recipeId:null, recipe:{type:'아이스',weight:'',water:'',grind:'',ice:'',extraWater:'',note:''}});
   document.getElementById('coffeeNoServiceWrap').style.display = loc === 'canteen' ? '' : 'none';
   document.getElementById('coffeeNoServiceCk').checked = existingNoService;
   document.getElementById('coffeeModalMsg').textContent = '';
@@ -1905,9 +1911,10 @@ async function saveCoffeeModal(){
         const grind = (r.grind||'').toString().trim();
         const ice = rtype === '아이스' ? (r.ice||'').toString().trim() : '';
         const extraWater = rtype === '핫' ? (r.extraWater||'').toString().trim() : '';
-        const hasRecipeData = !!(weight || water || grind || ice || extraWater);
+        const note = (r.note||'').toString().trim();
+        const hasRecipeData = !!(weight || water || grind || ice || extraWater || note);
         if (entryKept && hasRecipeData){
-          const rec = {date: ccModalDate, item, type: rtype, weight, water, grind, ice, extraWater};
+          const rec = {date: ccModalDate, item, type: rtype, weight, water, grind, ice, extraWater, note};
           if (row.recipeId) rec.id = row.recipeId;
           recipeToUpsert.push(rec);
         } else if (row.recipeId){
@@ -1971,6 +1978,7 @@ document.getElementById('coffeeModalRows').addEventListener('input', (evt) => {
   else if (evt.target.classList.contains('cc-f-rgrind')) { row.recipe = row.recipe || {}; row.recipe.grind = evt.target.value; }
   else if (evt.target.classList.contains('cc-f-rice')) { row.recipe = row.recipe || {}; row.recipe.ice = evt.target.value; }
   else if (evt.target.classList.contains('cc-f-rextrawater')) { row.recipe = row.recipe || {}; row.recipe.extraWater = evt.target.value; }
+  else if (evt.target.classList.contains('cc-f-rnote')) { row.recipe = row.recipe || {}; row.recipe.note = evt.target.value; }
 });
 document.getElementById('coffeeModalRows').addEventListener('click', (evt) => {
   const rtypeBtn = evt.target.closest('.cc-recipe-type-btn');
@@ -2035,10 +2043,11 @@ function brewTableRowsHtml(list, mode){
     ? `<th class="brew-sort-th" data-sort="type">구분${sortArrow('type')}</th>`
     : `<th>구분</th>`;
   return `<table>
-    <thead><tr><th>날짜</th>${thItem}${thType}<th class="num">중량(g)</th><th class="num">물의 양(ml)</th><th class="num">분쇄도</th><th class="num">얼음량(%)</th><th class="num">추가 물의양(ml)</th>${extraCol}</tr></thead>
+    <thead><tr><th>날짜</th>${thItem}${thType}<th class="num">중량(g)</th><th class="num">물의 양(ml)</th><th class="num">분쇄도</th><th class="num">얼음량(%)</th><th class="num">추가 물의양(ml)</th><th>비고</th>${extraCol}</tr></thead>
     <tbody>${list.map(r => {
       const rtype = r.type === '핫' ? '핫' : '아이스';
-      const cells = `<td>${r.date}</td><td>${r.item}</td><td>${rtypeLabel(rtype)}</td><td class="num">${r.weight||'-'}</td><td class="num">${r.water||'-'}</td><td class="num">${r.grind||'-'}</td><td class="num">${rtype==='아이스' ? (r.ice||'-') : '-'}</td><td class="num">${rtype==='핫' ? (r.extraWater||'-') : '-'}</td>`;
+      const noteCell = `<td class="dim memo-cell" ${r.note ? `title="${String(r.note).replace(/"/g,'&quot;')}"` : ''}>${r.note||''}</td>`;
+      const cells = `<td>${r.date}</td><td>${r.item}</td><td>${rtypeLabel(rtype)}</td><td class="num">${r.weight||'-'}</td><td class="num">${r.water||'-'}</td><td class="num">${r.grind||'-'}</td><td class="num">${rtype==='아이스' ? (r.ice||'-') : '-'}</td><td class="num">${rtype==='핫' ? (r.extraWater||'-') : '-'}</td>${noteCell}`;
       if (mode === 'pick'){
         return `<tr class="recipe-pick-row" data-id="${r.id}">${cells}</tr>`;
       }
@@ -2107,7 +2116,7 @@ document.getElementById('recipePickerOverlay').addEventListener('click', (evt) =
   if (!row) return;
   const picked = brewRecipes.find(r => r.id === row.dataset.id);
   if (picked && recipePickerRowIdx != null && ccModalRows[recipePickerRowIdx]){
-    ccModalRows[recipePickerRowIdx].recipe = {type: picked.type === '핫' ? '핫' : '아이스', weight: picked.weight, water: picked.water, grind: picked.grind, ice: picked.ice, extraWater: picked.extraWater};
+    ccModalRows[recipePickerRowIdx].recipe = {type: picked.type === '핫' ? '핫' : '아이스', weight: picked.weight, water: picked.water, grind: picked.grind, ice: picked.ice, extraWater: picked.extraWater, note: picked.note};
     document.getElementById('coffeeModalMsg').textContent = `${picked.date}에 저장한 "${picked.item}" 레시피를 불러왔습니다.`;
     document.getElementById('coffeeModalMsg').className = 'form-msg ok';
     renderCoffeeModalRows();
@@ -2116,7 +2125,7 @@ document.getElementById('recipePickerOverlay').addEventListener('click', (evt) =
 });
 
 document.getElementById('coffeeAddRowBtn').addEventListener('click', () => {
-  ccModalRows.push({item:'', size:'', qty:1, batch:'', recipeId:null, recipe:{type:'아이스',weight:'',water:'',grind:'',ice:'',extraWater:''}});
+  ccModalRows.push({item:'', size:'', qty:1, batch:'', recipeId:null, recipe:{type:'아이스',weight:'',water:'',grind:'',ice:'',extraWater:'',note:''}});
   renderCoffeeModalRows();
 });
 document.getElementById('coffeeNoServiceCk').addEventListener('change', toggleCoffeeModalRowsVisibility);
@@ -2179,6 +2188,7 @@ async function fetchRecordsFromSheet(isFirstLoad){
       ice: r.ice==null ? '' : String(r.ice),
       type: r.type === '핫' ? '핫' : '아이스',
       extraWater: r.extraWater==null ? '' : String(r.extraWater),
+      note: r.note==null ? '' : String(r.note),
     }));
     renderDashboard();
     renderDetail();
